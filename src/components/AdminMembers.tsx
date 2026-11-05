@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { detailsLabel } from "@/lib/member-info";
+import AdminCoupons from "./AdminCoupons";
 
 type Member = {
   id: string;
@@ -229,6 +230,7 @@ export default function AdminMembers() {
       </div>
       <p className="text-xs text-foreground/60">관리자 계정은 여기서 탈퇴시킬 수 없어요. 내 계정 탈퇴는 이 페이지 아래 ‘회원 탈퇴’에서 할 수 있어요.</p>
       </>)}
+      <AdminCoupons />
     </section>
   );
 }

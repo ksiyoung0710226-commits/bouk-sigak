@@ -127,9 +127,9 @@ export default function AdminCoupons() {
   const matches = (m: Member) => !search || m.nickname.toLowerCase().includes(search) || detailsLabel(m.kind, m).toLowerCase().includes(search);
 
   return (
-    <section id="admin-coupons" className="card scroll-mt-24 space-y-5 p-6">
+    <section id="admin-coupons" className="scroll-mt-24 space-y-5 border-t-4 border-double border-ink pt-6">
       <div>
-        <h2 className="text-xl">🎟️ 랜덤 행사 쿠폰 발급 <span className="text-sm font-normal text-foreground/60">(관리자만 보여요)</span></h2>
+        <h2 className="text-xl">🎲 회원 추첨 · 랜덤 행사 쿠폰 발급 <span className="text-sm font-normal text-foreground/60">(관리자만 보여요)</span></h2>
         <p className="mt-1 text-sm text-foreground/70">
           추첨 대상을 고르고 당첨 인원을 정하면 <b>서버가 무작위로</b> 뽑고 당첨자마다 쿠폰 번호를 만들어요. 결과는 기록으로 남아 다시 뽑을 수 없어요.
         </p>

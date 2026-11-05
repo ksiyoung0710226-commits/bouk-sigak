@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import PageTitle from "@/components/PageTitle";
 import RequireAuth from "@/components/RequireAuth";
 import AdminMembers from "@/components/AdminMembers";
-import AdminCoupons from "@/components/AdminCoupons";
 import { useAuth } from "@/components/AuthProvider";
 import { SAVED_EMAIL_KEY, nicknameErrorMessage, supabase } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
@@ -346,7 +345,6 @@ function Inner() {
         <p className="mt-1 text-foreground/75">{session?.user.email}</p>
       </div>
       <AdminMembers />
-      <AdminCoupons />
       <div className="mx-auto max-w-2xl space-y-6">
         <NicknameSection />
         <DetailsSection />
