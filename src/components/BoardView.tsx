@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "./AuthProvider";
+import DmRequestButton from "./DmRequestButton";
+import { detailsLabel, one, type Details } from "@/lib/member-info";
 
-type Author = { nickname: string; kind: string; teacher_verified: boolean } | null;
+type Author = { nickname: string; kind: string; teacher_verified: boolean; profile_details: Details | Details[] | null } | null;
+const AUTHOR = "profiles(nickname,kind,teacher_verified,profile_details(school,region,center_type))";
 type Post = {
   id: number; category: string; title: string; body: string; author_id: string; created_at: string; pinned_at: string | null;
   profiles: Author; comments: { count: number }[];
@@ -36,7 +39,7 @@ export default function BoardView({
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("posts")
-      .select("id,category,title,body,author_id,created_at,pinned_at,profiles(nickname,kind,teacher_verified),comments(count)")
+      .select(`id,category,title,body,author_id,created_at,pinned_at,${AUTHOR},comments(count)`)
       .eq("board", board)
       .order("pinned_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
@@ -79,6 +82,7 @@ export default function BoardView({
     load();
   }
 
+  const openPost = posts.find((p) => p.id === open) ?? null;
   const shown = filter === "전체" ? posts : posts.filter((p) => p.category === filter);
 
   return (
@@ -119,40 +123,78 @@ export default function BoardView({
         <ul className="divide-y divide-line card">
           {shown.map((p) => (
             <li key={p.id} className={`p-4 ${p.pinned_at ? "bg-lime/40" : ""}`}>
-              <button className="w-full text-left" onClick={() => setOpen(open === p.id ? null : p.id)} aria-expanded={open === p.id}>
+              <button className="w-full text-left" onClick={() => setOpen(p.id)} aria-haspopup="dialog">
                 {p.pinned_at && <span className="mr-1.5 rounded-full border border-ink bg-white px-2 py-0.5 text-xs font-bold">📌 고정</span>}
                 <span className="text-xs text-brand-dark">[{p.category}]</span>
                 <p className="font-medium">
                   {qna && <span className="mr-1 font-bold">Q.</span>}{p.title}
-                  {qna && (
+                  {qna ? (
                     <span className={`ml-2 rounded-full px-2 py-0.5 align-middle text-xs ${(p.comments?.[0]?.count ?? 0) > 0 ? "bg-lime" : "bg-soft text-foreground/60"}`}>
                       {(p.comments?.[0]?.count ?? 0) > 0 ? `답변 ${p.comments[0].count}` : "답변 대기"}
                     </span>
+                  ) : (p.comments?.[0]?.count ?? 0) > 0 && (
+                    <span className="ml-1.5 text-xs text-foreground/60">💬 {p.comments[0].count}</span>
                   )}
                 </p>
+                <p className="mt-1 line-clamp-2 text-sm text-foreground/70">{p.body}</p>
               </button>
-              <AuthorLine author={p.profiles} createdAt={p.created_at}
+              <AuthorLine author={p.profiles} userId={p.author_id} createdAt={p.created_at}
                 onReport={p.author_id === session?.user.id ? undefined : () => report("post_id", p.id)} />
-              {open === p.id && (
-                <div className="mt-3 border-t border-line pt-3">
-                  <p className="whitespace-pre-wrap text-sm">{p.body}</p>
-                  {(p.author_id === session?.user.id || profile?.is_admin) && (
-                    <div className="mt-3 flex gap-3 text-xs">
-                      <button onClick={() => remove(p.id)} className="text-red-700 underline">삭제</button>
-                      {profile?.is_admin && (
-                        <button onClick={() => togglePin(p)} className="font-bold underline">
-                          {p.pinned_at ? "📌 고정 해제" : "📌 맨 위에 고정"}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  <Comments postId={p.id} qna={qna} onReport={(id) => report("comment_id", id)} onChange={load} />
-                </div>
-              )}
             </li>
           ))}
         </ul>
       )}
+      {openPost && (
+        <PostModal onClose={() => setOpen(null)}>
+          <span className="text-sm text-brand-dark">
+            {openPost.pinned_at && <span className="mr-1.5 rounded-full border border-ink bg-white px-2 py-0.5 text-xs font-bold text-foreground">📌 고정</span>}
+            [{openPost.category}]
+          </span>
+          <h2 id="post-title" className="mt-2 text-2xl font-bold sm:text-3xl">
+            {qna && <span className="mr-1.5">Q.</span>}{openPost.title}
+          </h2>
+          <div className="mt-2">
+            <AuthorLine author={openPost.profiles} userId={openPost.author_id} createdAt={openPost.created_at}
+              onReport={openPost.author_id === session?.user.id ? undefined : () => report("post_id", openPost.id)} />
+          </div>
+          <p className="mt-6 whitespace-pre-wrap text-base leading-relaxed">{openPost.body}</p>
+          {(openPost.author_id === session?.user.id || profile?.is_admin) && (
+            <div className="mt-6 flex gap-3 text-sm">
+              <button onClick={() => remove(openPost.id)} className="text-red-700 underline">삭제</button>
+              {profile?.is_admin && (
+                <button onClick={() => togglePin(openPost)} className="font-bold underline">
+                  {openPost.pinned_at ? "📌 고정 해제" : "📌 맨 위에 고정"}
+                </button>
+              )}
+            </div>
+          )}
+          <div className="mt-8 border-t-2 border-ink pt-4">
+            <Comments postId={openPost.id} qna={qna} onReport={(id) => report("comment_id", id)} onChange={load} />
+          </div>
+        </PostModal>
+      )}
+    </div>
+  );
+}
+
+// 글 크게 보기: 화면 전체를 덮는 창 (Esc 또는 닫기 버튼으로 닫음)
+function PostModal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
+  }, [onClose]);
+  return (
+    <div role="dialog" aria-modal="true" aria-labelledby="post-title" className="fixed inset-0 z-50 overflow-y-auto bg-background">
+      <div className="sticky top-0 z-10 border-b-2 border-ink bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+          <button onClick={onClose} className="font-bold">← 목록으로</button>
+          <button onClick={onClose} aria-label="닫기" className="rounded-full border border-ink px-3 py-1 text-sm hover:bg-soft">✕ 닫기</button>
+        </div>
+      </div>
+      <article className="mx-auto max-w-3xl px-4 py-8">{children}</article>
     </div>
   );
 }
@@ -165,7 +207,7 @@ function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: bo
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("comments")
-      .select("id,body,author_id,created_at,profiles(nickname,kind,teacher_verified)")
+      .select(`id,body,author_id,created_at,${AUTHOR}`)
       .eq("post_id", postId)
       .order("created_at");
     setItems((data as unknown as Comment[]) ?? []);
@@ -195,7 +237,7 @@ function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: bo
         {items.map((c) => (
           <li key={c.id} className={`note p-3 text-sm ${isTeacherAnswer(c) ? "border-2 border-ink" : ""}`}>
             {isTeacherAnswer(c) && <p className="mb-1 text-xs font-bold"><span className="kw">✅ 인증 교사 답변</span></p>}
-            <AuthorLine author={c.profiles} createdAt={c.created_at}
+            <AuthorLine author={c.profiles} userId={c.author_id} createdAt={c.created_at}
               onReport={c.author_id === session?.user.id ? undefined : () => onReport(c.id)} />
             <p className="whitespace-pre-wrap">{c.body}</p>
             {(c.author_id === session?.user.id || profile?.is_admin) && (
@@ -216,19 +258,21 @@ function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: bo
 
 // 작성자 줄: 닉네임 바로 옆에 신고 버튼 (내 글·댓글에는 신고 버튼을 숨김)
 function AuthorLine({
-  author, createdAt, onReport,
-}: { author: Author; createdAt: string; onReport?: () => void }) {
+  author, userId, createdAt, onReport,
+}: { author: Author; userId: string; createdAt: string; onReport?: () => void }) {
   const nickname = author?.nickname;
   const kind = author?.kind;
+  const info = detailsLabel(kind, one(author?.profile_details));
   return (
     <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-foreground/60">
       <span className="font-bold text-foreground/80">{nickname ?? "탈퇴한 회원"}</span>
+      {author && <DmRequestButton userId={userId} nickname={nickname ?? "회원"} />}
       {onReport && (
         <button onClick={onReport} className="rounded-full border border-line px-2 leading-5 hover:bg-red-50 hover:text-red-700" aria-label={`${nickname ?? "작성자"}의 게시물 신고`}>
           🚩 신고
         </button>
       )}
-      <span>· {kindLabel(kind)}{kind === "teacher" && author?.teacher_verified ? " ✅" : ""} · {when(createdAt)}</span>
+      <span>· {kindLabel(kind)}{kind === "teacher" && author?.teacher_verified ? " ✅" : ""}{info ? ` · ${info}` : ""} · {when(createdAt)}</span>
     </p>
   );
 }

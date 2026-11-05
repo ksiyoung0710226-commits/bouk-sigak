@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
+import { CENTER_TYPES, REGIONS } from "@/lib/member-info";
 
 type Kind = "student" | "teacher";
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
@@ -13,6 +14,10 @@ export default function SignupForm() {
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [school, setSchool] = useState("");
+  const [region, setRegion] = useState("");
+  const [centerType, setCenterType] = useState("");
+  const [infoPublic, setInfoPublic] = useState(true);
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -25,6 +30,8 @@ export default function SignupForm() {
     const nickErr = validateNickname(nick);
     if (nickErr) return setError(nickErr);
     if (password.length < 8) return setError("비밀번호는 8자 이상이어야 해요.");
+    if (kind === "student" && !school.trim()) return setError("재학 중인 학교를 적어 주세요.");
+    if (kind === "teacher" && (!region || !centerType)) return setError("근무 지역과 어린이집 유형을 골라 주세요.");
     setBusy(true);
     const { data: free } = await supabase.rpc("nickname_available", { nick });
     if (free === false) {
@@ -35,7 +42,9 @@ export default function SignupForm() {
       email: email.trim(),
       password,
       options: {
-        data: { nickname: nick, kind },
+        data: kind === "student"
+          ? { nickname: nick, kind, school: school.trim(), info_public: infoPublic }
+          : { nickname: nick, kind, region, center_type: centerType, info_public: infoPublic },
         emailRedirectTo: `${window.location.origin}/login`,
       },
     });
@@ -83,6 +92,42 @@ export default function SignupForm() {
         </p>
       </div>
 
+      <div className="space-y-3 rounded-xl border border-line bg-white/60 p-4">
+        {kind === "student" ? (
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium">재학 중인 학교</span>
+            <input className={input} value={school} onChange={(e) => setSchool(e.target.value)} placeholder="예: OO대학교" maxLength={50} required />
+          </label>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">근무 지역</span>
+              <select className={input} value={region} onChange={(e) => setRegion(e.target.value)} required>
+                <option value="">선택해 주세요</option>
+                {REGIONS.map((r) => <option key={r}>{r}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">근무하는 어린이집 유형</span>
+              <select className={input} value={centerType} onChange={(e) => setCenterType(e.target.value)} required>
+                <option value="">선택해 주세요</option>
+                {CENTER_TYPES.map((c) => <option key={c} value={c}>{c === "기타" ? "기타" : `${c} 어린이집`}</option>)}
+              </select>
+            </label>
+          </div>
+        )}
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" checked={infoPublic} onChange={(e) => setInfoPublic(e.target.checked)} className="mt-1" />
+          <span>
+            {kind === "student" ? "학교를" : "근무 지역과 어린이집 유형을"} 다른 회원에게 공개할게요.
+            <span className="mt-0.5 block text-xs text-foreground/60">
+              공개하면 내 글과 댓글의 닉네임 옆에 표시돼요. <b>원치 않으면 체크를 풀어 숨길 수 있고, 가입 후에도 ‘내 정보’에서 언제든 바꿀 수 있어요.</b>
+              숨겨도 이 정보는 운영(관리자 확인)을 위해 수집돼요.
+            </span>
+          </span>
+        </label>
+      </div>
+
       <label className="block">
         <span className="mb-1 block text-sm font-medium">닉네임</span>
         <input className={input} value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="실명 대신 닉네임을 써 주세요" maxLength={20} required />
@@ -100,7 +145,7 @@ export default function SignupForm() {
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-1" required />
         <span>
-          [필수] 이메일, 닉네임, 가입 유형을 서비스 운영 목적으로 수집하는 것에 동의하며, 게시글에
+          [필수] 이메일, 닉네임, 가입 유형, {kind === "student" ? "재학 중인 학교" : "근무 지역과 어린이집 유형"}을 서비스 운영 목적으로 수집하는 것에 동의하며, 게시글에
           <b> 아동·기관·학부모의 실명이나 개인정보를 쓰지 않겠습니다.</b>
         </span>
       </label>

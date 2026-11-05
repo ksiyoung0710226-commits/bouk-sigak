@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "./AuthProvider";
 import InquiryLink from "./InquiryLink";
+import ChatLink from "./ChatLink";
 
 export const NAV = [
   { href: "/curriculum", label: "보육과정" },
@@ -35,6 +36,7 @@ export default function Header() {
                 {profile?.is_admin && (
                   <Link href="/profile#admin-members" className="font-bold decoration-lime decoration-4 underline-offset-4 hover:underline">🛠 회원 관리</Link>
                 )}
+                <ChatLink />
                 <InquiryLink />
                 <button onClick={signOut} className="rounded-full border border-line px-3 py-1 hover:bg-soft">로그아웃</button>
               </>

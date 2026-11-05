@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
+import { detailsLabel } from "@/lib/member-info";
 
 type Member = {
   id: string;
@@ -15,6 +16,10 @@ type Member = {
   last_sign_in_at: string | null;
   post_count: number;
   comment_count: number;
+  school: string | null;
+  region: string | null;
+  center_type: string | null;
+  info_public: boolean;
 };
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString("ko-KR") : "-");
@@ -89,7 +94,7 @@ export default function AdminMembers() {
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!members) return [];
-    return s ? members.filter((m) => m.nickname.toLowerCase().includes(s) || m.email.toLowerCase().includes(s)) : members;
+    return s ? members.filter((m) => m.nickname.toLowerCase().includes(s) || m.email.toLowerCase().includes(s) || detailsLabel(m.kind, m).toLowerCase().includes(s)) : members;
   }, [members, q]);
 
   if (loading || !profile?.is_admin) return null;
@@ -112,7 +117,7 @@ export default function AdminMembers() {
       </div>
       <input
         className="w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand"
-        placeholder="닉네임 또는 이메일로 찾기"
+        placeholder="닉네임, 이메일, 학교, 지역으로 찾기"
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
@@ -127,6 +132,12 @@ export default function AdminMembers() {
                   {m.id === profile.id && <span className="ml-2 text-xs text-foreground/60">(나)</span>}
                 </p>
                 <p className="text-sm text-foreground/75">{m.email}</p>
+                {detailsLabel(m.kind, m) && (
+                  <p className="text-sm">
+                    {m.kind === "teacher" ? "🏫 " : "🎓 "}{detailsLabel(m.kind, m)}
+                    <span className="ml-1 text-xs text-foreground/60">({m.info_public ? "공개" : "비공개"})</span>
+                  </p>
+                )}
                 <p className="mt-1 text-xs text-foreground/60">
                   {kindLabel(m)} · 가입 {fmt(m.created_at)} · 최근 로그인 {fmt(m.last_sign_in_at)} · 글 {m.post_count} · 댓글 {m.comment_count}
                 </p>

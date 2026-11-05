@@ -21,6 +21,10 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - Q&A `/qna` (예전 '교사 노하우' `/tips` → 리다이렉트, 006에서 board 'tips'→'qna'): 모든 회원이 질문·답변 가능. 답변 = comments. 인증 교사(kind=teacher & teacher_verified) 답변에 '✅ 인증 교사 답변' 표시. 미인증 교사에게만 TeacherCode 입력칸 노출.
 - 보육 뉴스 `/news`: `src/lib/news.ts`가 구글 뉴스 RSS(보육/어린이집/보육교사/영유아, 최근 7일) 제목·언론사·날짜·링크만 가져와 `use cache` + cacheLife(revalidate 5분)로 갱신. 기사 본문은 가져오지 않음. 링크는 news.google.com만 허용.
 - 1:1 문의 `/inquiry` (007): 테이블 inquiries + inquiry_messages. 회원은 자기 문의만, 관리자는 전체(RLS). 메시지 insert 트리거가 status(open/answered)와 admin_unread/user_unread 갱신. RPC `mark_inquiry_read`, `set_inquiry_closed`. 헤더 `InquiryLink`: 비로그인·일반회원 '💌 문의하기'(로그인/로그아웃 옆), 관리자 '📮 문의함' + 안 읽은 수 배지(1분마다·포커스 시 확인). 이메일 알림은 없음(커스텀 SMTP 필요).
+- 글 고정(008): `posts.pinned_at`, RPC `admin_set_pinned`(관리자만). 회원 insert는 컬럼 제한(board,category,title,body,author_id)으로 스스로 고정 불가.
+- 게시판 글 보기: 제목/미리보기 클릭 → 화면 전체 `PostModal`(Esc·닫기). 작성자 줄(`AuthorLine`)에 공개된 학교/지역·유형 표시 + '💬 1:1 채팅' 버튼.
+- 회원 추가 정보(009): `profile_details`(school | region+center_type, is_public). 가입 트리거가 메타데이터에서 저장(잘못된 값은 버림). 비공개면 본인·관리자만 조회(RLS). 값 목록은 `src/lib/member-info.ts`와 DB check를 같이 바꿀 것. `/profile`에서 수정·공개 전환, 관리자 목록에 표시.
+- 회원 1:1 채팅(009) `/chat`: `dm_threads`(요청 멘트 intro, pending→accepted/declined, 같은 두 사람 사이 1개·거절 후 재요청 불가) + `dm_messages`(수락 후에만). RPC `respond_dm`, `mark_dm_read`. 관리자도 대화 내용은 못 봄. 헤더 `ChatLink` 배지(받은 요청+안 읽은 대화), 대화방은 5초마다 새로고침.
 - 홈 상단 버튼은 '보육시각이란?' 하나 → `/about` 소개 페이지(사용자 요청으로 '커뮤니티 둘러보기', '보육과정 보기' 제거).
 - `/knowledge` 제목 아래 파란 형광펜(`.hl-blue`) 안내: '전공 서적을 참고' 문구(사용자 요청).
 - DB 스키마: `supabase/migrations/*.sql`. 실행: `npx supabase db query --remote=soiiihaivulcqqomzotb --file <파일> --yes`
@@ -50,7 +54,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 ## 남은 할 일
 1. 관리자용 신고 목록 화면(신고는 reports 표에 저장되지만 아직 볼 화면이 없음).
 2. 인증 메일: 무료 기본 메일은 제목·발신자명 변경 불가, 시간당 한도 작음 → 여러 명 공유 전에 커스텀 SMTP(Resend 등) 연결 또는 인증 끄기 결정.
-3. 개인정보 처리방침·이용약관 초안 작성(수집: 이메일, 닉네임, 가입 유형만. 서류는 받지 않음).
+3. 개인정보 처리방침·이용약관 초안 작성(수집: 이메일, 닉네임, 가입 유형, 재학생 학교 / 교사 근무 지역·어린이집 유형. 서류는 받지 않음). 1:1 채팅 신고·차단 기능은 아직 없음.
 4. 교사 초대코드 변경은 DB `app_secrets` 표(key='teacher_code') 업데이트. 코드는 사용자에게 따로 전달했음.
 5. (선택) 다른 페이지 제목도 로고와 같은 부드러운 글꼴로 맞출지 사용자에게 확인.
 

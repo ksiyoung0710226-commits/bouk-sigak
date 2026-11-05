@@ -7,6 +7,7 @@ import AdminMembers from "@/components/AdminMembers";
 import { useAuth } from "@/components/AuthProvider";
 import { SAVED_EMAIL_KEY, nicknameErrorMessage, supabase } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
+import { CENTER_TYPES, REGIONS } from "@/lib/member-info";
 
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
 const primary = "rounded-full bg-brand px-5 py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50";
@@ -63,6 +64,93 @@ function NicknameSection() {
       </p>
       <Message msg={msg} />
       <button disabled={busy} className={primary}>{busy ? "저장 중…" : "닉네임 저장"}</button>
+    </form>
+  );
+}
+
+function DetailsSection() {
+  const { profile } = useAuth();
+  const [school, setSchool] = useState("");
+  const [region, setRegion] = useState("");
+  const [centerType, setCenterType] = useState("");
+  const [isPublic, setIsPublic] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<Msg>(null);
+  const teacher = profile?.kind === "teacher";
+
+  useEffect(() => {
+    if (!profile) return;
+    let alive = true;
+    supabase.from("profile_details").select("school,region,center_type,is_public").eq("user_id", profile.id).maybeSingle()
+      .then(({ data }) => {
+        if (!alive) return;
+        setSchool(data?.school ?? "");
+        setRegion(data?.region ?? "");
+        setCenterType(data?.center_type ?? "");
+        setIsPublic(data?.is_public ?? true);
+        setLoaded(true);
+      });
+    return () => { alive = false; };
+  }, [profile]);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!profile) return;
+    setMsg(null);
+    if (!teacher && !school.trim()) return setMsg({ ok: false, text: "재학 중인 학교를 적어 주세요." });
+    if (teacher && (!region || !centerType)) return setMsg({ ok: false, text: "근무 지역과 어린이집 유형을 골라 주세요." });
+    setBusy(true);
+    const row = teacher
+      ? { school: null, region, center_type: centerType, is_public: isPublic }
+      : { school: school.trim(), region: null, center_type: null, is_public: isPublic };
+    const { data: existing } = await supabase.from("profile_details").select("user_id").eq("user_id", profile.id).maybeSingle();
+    const { error } = existing
+      ? await supabase.from("profile_details").update({ ...row, updated_at: new Date().toISOString() }).eq("user_id", profile.id)
+      : await supabase.from("profile_details").insert({ user_id: profile.id, ...row });
+    setBusy(false);
+    if (error) return setMsg({ ok: false, text: "저장하지 못했어요. 잠시 후 다시 시도해 주세요." });
+    setMsg({ ok: true, text: isPublic ? "저장했어요. 다른 회원에게 공개돼요." : "저장했어요. 나와 관리자만 볼 수 있어요." });
+  }
+
+  if (!loaded) return null;
+  return (
+    <form onSubmit={save} className="card space-y-3 p-6">
+      <h2 className="text-xl">{teacher ? "근무 정보" : "학교 정보"}</h2>
+      {teacher ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">근무 지역</span>
+            <select className={input} value={region} onChange={(e) => setRegion(e.target.value)}>
+              <option value="">선택해 주세요</option>
+              {REGIONS.map((r) => <option key={r}>{r}</option>)}
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">어린이집 유형</span>
+            <select className={input} value={centerType} onChange={(e) => setCenterType(e.target.value)}>
+              <option value="">선택해 주세요</option>
+              {CENTER_TYPES.map((c) => <option key={c} value={c}>{c === "기타" ? "기타" : `${c} 어린이집`}</option>)}
+            </select>
+          </label>
+        </div>
+      ) : (
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium">재학 중인 학교</span>
+          <input className={input} value={school} onChange={(e) => setSchool(e.target.value)} maxLength={50} placeholder="예: OO대학교" />
+        </label>
+      )}
+      <div className="flex flex-wrap gap-2 text-sm" role="radiogroup" aria-label="공개 설정">
+        {[[true, "🌐 다른 회원에게 공개"], [false, "🔒 비공개 (나와 관리자만)"]].map(([v, label]) => (
+          <button type="button" key={String(v)} role="radio" aria-checked={isPublic === v} onClick={() => setIsPublic(v as boolean)}
+            className={`rounded-full px-4 py-1.5 ${isPublic === v ? "bg-brand text-white" : "border border-line bg-white"}`}>
+            {label as string}
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-foreground/60">공개하면 내 글과 댓글의 닉네임 옆에 표시돼요. 비공개여도 운영을 위해 관리자는 볼 수 있어요.</p>
+      <Message msg={msg} />
+      <button disabled={busy} className={primary}>{busy ? "저장 중…" : "저장"}</button>
     </form>
   );
 }
@@ -251,6 +339,7 @@ function Inner() {
       </div>
       <AdminMembers />
       <NicknameSection />
+      <DetailsSection />
       <EmailSection />
       <PasswordSection />
       <DeleteSection />
