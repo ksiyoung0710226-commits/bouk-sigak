@@ -25,6 +25,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 글 고정(008): `posts.pinned_at`, RPC `admin_set_pinned`(관리자만). 회원 insert는 컬럼 제한(board,category,title,body,author_id)으로 스스로 고정 불가.
 - 게시판 글 보기: 제목/미리보기 클릭 → 화면 전체 `PostModal`(Esc·닫기). 작성자 줄(`AuthorLine`)에 공개된 학교/지역·유형 표시 + '💬 1:1 채팅' 버튼.
 - 회원 추가 정보(009): `profile_details`(school | region+center_type, is_public). 가입 트리거가 메타데이터에서 저장(잘못된 값은 버림). 비공개면 본인·관리자만 조회(RLS). 값 목록은 `src/lib/member-info.ts`와 DB check를 같이 바꿀 것. `/profile`에서 수정·공개 전환, 관리자 목록에 표시.
+- 학교 검증(010): 재학생은 `SchoolPicker`로 학교+학과 검색 선택(줄임말 '한양여대' 등 지원). 목록 = `src/lib/schools-data.ts`(대학알리미 대학별 학과정보 2023.6.14, data.go.kr 15014632에서 생성: 폐지 아닌 학사·전문학사 중 표준분류 소계열 유아교육/아동·가족학, 학과명 '보육', 사회복지학 중 아동·유아·영유아 → 212개교 340학과) = DB `school_majors`. DB 트리거 `verify_school`이 목록에 있으면 `school_verified`=true → 이름 옆 ✓. '목록에 없어요'로 직접 입력 가능(✓ 없음). 목록 갱신 시 두 곳을 같이 바꿀 것.
 - 회원 1:1 채팅(009) `/chat`: `dm_threads`(요청 멘트 intro, pending→accepted/declined, 같은 두 사람 사이 1개·거절 후 재요청 불가) + `dm_messages`(수락 후에만). RPC `respond_dm`, `mark_dm_read`. 관리자도 대화 내용은 못 봄. 헤더 `ChatLink` 배지(받은 요청+안 읽은 대화), 대화방은 5초마다 새로고침.
 - 홈 상단 버튼은 '보육시각이란?' 하나 → `/about` 소개 페이지(사용자 요청으로 '커뮤니티 둘러보기', '보육과정 보기' 제거).
 - `/knowledge` 제목 아래 파란 형광펜(`.hl-blue`) 안내: '전공 서적을 참고' 문구(사용자 요청).

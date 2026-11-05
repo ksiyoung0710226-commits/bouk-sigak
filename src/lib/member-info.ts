@@ -7,7 +7,10 @@ export const REGIONS = [
 // 영유아보육법상 어린이집 유형 + 기타
 export const CENTER_TYPES = ["국공립", "사회복지법인", "법인·단체등", "민간", "가정", "협동", "직장", "기타"] as const;
 
-export type Details = { school: string | null; region: string | null; center_type: string | null; is_public?: boolean };
+export type Details = {
+  school: string | null; major?: string | null; school_verified?: boolean;
+  region: string | null; center_type: string | null; is_public?: boolean;
+};
 
 // 게시판 등에 보여 줄 짧은 표시 (예: "OO대학교" / "서울 · 국공립 어린이집")
 export function detailsLabel(kind: string | undefined, d: Details | null | undefined): string {
@@ -16,7 +19,8 @@ export function detailsLabel(kind: string | undefined, d: Details | null | undef
     const parts = [d.region, d.center_type && (d.center_type === "기타" ? "기타 기관" : `${d.center_type} 어린이집`)].filter(Boolean);
     return parts.join(" · ");
   }
-  return d.school ?? "";
+  if (!d.school) return "";
+  return `${d.school}${d.major ? ` ${d.major}` : ""}${d.school_verified ? " ✓" : ""}`;
 }
 
 // PostgREST 1:1 관계는 객체 또는 배열로 올 수 있어 하나로 맞춤

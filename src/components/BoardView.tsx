@@ -7,7 +7,7 @@ import DmRequestButton from "./DmRequestButton";
 import { detailsLabel, one, type Details } from "@/lib/member-info";
 
 type Author = { nickname: string; kind: string; teacher_verified: boolean; profile_details: Details | Details[] | null } | null;
-const AUTHOR = "profiles(nickname,kind,teacher_verified,profile_details(school,region,center_type))";
+const AUTHOR = "profiles(nickname,kind,teacher_verified,profile_details(school,major,school_verified,region,center_type))";
 type Post = {
   id: number; category: string; title: string; body: string; author_id: string; created_at: string; pinned_at: string | null;
   profiles: Author; comments: { count: number }[];

@@ -8,6 +8,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { SAVED_EMAIL_KEY, nicknameErrorMessage, supabase } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
 import { CENTER_TYPES, REGIONS } from "@/lib/member-info";
+import SchoolPicker from "@/components/SchoolPicker";
 
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
 const primary = "rounded-full bg-brand px-5 py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50";
@@ -71,6 +72,7 @@ function NicknameSection() {
 function DetailsSection() {
   const { profile } = useAuth();
   const [school, setSchool] = useState("");
+  const [major, setMajor] = useState("");
   const [region, setRegion] = useState("");
   const [centerType, setCenterType] = useState("");
   const [isPublic, setIsPublic] = useState(true);
@@ -82,10 +84,11 @@ function DetailsSection() {
   useEffect(() => {
     if (!profile) return;
     let alive = true;
-    supabase.from("profile_details").select("school,region,center_type,is_public").eq("user_id", profile.id).maybeSingle()
+    supabase.from("profile_details").select("school,major,region,center_type,is_public").eq("user_id", profile.id).maybeSingle()
       .then(({ data }) => {
         if (!alive) return;
         setSchool(data?.school ?? "");
+        setMajor(data?.major ?? "");
         setRegion(data?.region ?? "");
         setCenterType(data?.center_type ?? "");
         setIsPublic(data?.is_public ?? true);
@@ -98,12 +101,12 @@ function DetailsSection() {
     e.preventDefault();
     if (!profile) return;
     setMsg(null);
-    if (!teacher && !school.trim()) return setMsg({ ok: false, text: "재학 중인 학교를 적어 주세요." });
+    if (!teacher && (!school.trim() || !major.trim())) return setMsg({ ok: false, text: "재학 중인 학교와 학과를 골라 주세요." });
     if (teacher && (!region || !centerType)) return setMsg({ ok: false, text: "근무 지역과 어린이집 유형을 골라 주세요." });
     setBusy(true);
     const row = teacher
-      ? { school: null, region, center_type: centerType, is_public: isPublic }
-      : { school: school.trim(), region: null, center_type: null, is_public: isPublic };
+      ? { school: null, major: null, region, center_type: centerType, is_public: isPublic }
+      : { school: school.trim(), major: major.trim(), region: null, center_type: null, is_public: isPublic };
     const { data: existing } = await supabase.from("profile_details").select("user_id").eq("user_id", profile.id).maybeSingle();
     const { error } = existing
       ? await supabase.from("profile_details").update({ ...row, updated_at: new Date().toISOString() }).eq("user_id", profile.id)
@@ -135,10 +138,10 @@ function DetailsSection() {
           </label>
         </div>
       ) : (
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium">재학 중인 학교</span>
-          <input className={input} value={school} onChange={(e) => setSchool(e.target.value)} maxLength={50} placeholder="예: OO대학교" />
-        </label>
+        <div className="text-sm">
+          <span className="mb-1 block font-medium">재학 중인 학교와 학과</span>
+          <SchoolPicker school={school} major={major} onChange={(s, m) => { setSchool(s); setMajor(m); }} />
+        </div>
       )}
       <div className="flex flex-wrap gap-2 text-sm" role="radiogroup" aria-label="공개 설정">
         {[[true, "🌐 다른 회원에게 공개"], [false, "🔒 비공개 (나와 관리자만)"]].map(([v, label]) => (

@@ -17,6 +17,8 @@ type Member = {
   post_count: number;
   comment_count: number;
   school: string | null;
+  major: string | null;
+  school_verified: boolean;
   region: string | null;
   center_type: string | null;
   info_public: boolean;
