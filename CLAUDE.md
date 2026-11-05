@@ -31,8 +31,9 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 회원 관리 목록은 재학생 / 현장교사 두 칸, 검색은 두 칸에 함께 적용. `/profile`은 max-w-5xl, 관리자 칸만 넓고 나머지 폼은 max-w-2xl.
 - 회원 1:1 채팅(009) `/chat`: `dm_threads`(요청 멘트 intro, pending→accepted/declined, 같은 두 사람 사이 1개·거절 후 재요청 불가) + `dm_messages`(수락 후에만). RPC `respond_dm`, `mark_dm_read`. 관리자도 대화 내용은 못 봄. 헤더 `ChatLink` 배지(받은 요청+안 읽은 대화), 대화방은 5초마다 새로고침.
 - 관리자 → 회원 1:1 메시지(012, 상품 전달용): 회원 관리 카드의 '💬 1:1 메시지' → RPC `admin_start_inquiry`(관리자만)로 inquiries 방 생성(`started_by_admin`), 수락 없이 전달. 회원은 '💌 문의하기'에서 알림과 함께 받고 답장 가능, 목록에 '📮 관리자 메시지' 표시.
-- 랜덤 행사 쿠폰(013): `/profile#admin-coupons` `AdminCoupons`(관리자만, 회원 관리 카드 안 맨 아래, 헤더 '🎲 회원 추첨'). ① 행사 정보 ② 대상(재학생/교사 칸, 개별 체크 해제) ③ 인원 먼저 설정(0이면 추첨 불가) → RPC `admin_draw_coupons`가 DB에서 `order by random()`으로 추첨·쿠폰번호(BOYUK-XXXX-XXXX) 발급, 관리자 제외, 기록(coupon_events/coupon_winners) 남음. `admin_message_winners`로 당첨자 전원에게 1:1 메시지({닉네임},{쿠폰},{쿠폰번호} 치환, 보낸 사람은 건너뜀).
+- 랜덤 행사 쿠폰(013): `/profile#admin-coupons` `AdminCoupons`(관리자만, 회원 관리 카드 안 맨 아래, 헤더 '🎲 회원 추첨'). ① 대상(재학생/교사 칸, 개별 체크 해제) ② 인원 먼저 설정(행사 이름·쿠폰 칸은 사용자 요청으로 없앰, 기록 이름은 날짜 자동)(0이면 추첨 불가) → RPC `admin_draw_coupons`가 DB에서 `order by random()`으로 추첨·쿠폰번호(BOYUK-XXXX-XXXX) 발급, 관리자 제외, 기록(coupon_events/coupon_winners) 남음. `admin_message_winners`로 당첨자 전원에게 1:1 메시지({닉네임},{쿠폰},{쿠폰번호} 치환, 보낸 사람은 건너뜀).
 - 홈 상단 버튼은 '보육시각이란?' 하나 → `/about` 소개 페이지(사용자 요청으로 '커뮤니티 둘러보기', '보육과정 보기' 제거).
+- Q&A 상단 파란 형광펜 공지: 답변자 매달 2명 추첨 스타벅스 5천 원 쿠폰(사용자 요청 문구).
 - `/knowledge` 제목 아래 파란 형광펜(`.hl-blue`) 안내: '전공 서적을 참고' 문구(사용자 요청).
 - DB 스키마: `supabase/migrations/*.sql`. 실행: `npx supabase db query --remote=soiiihaivulcqqomzotb --file <파일> --yes`
 

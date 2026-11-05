@@ -16,7 +16,7 @@ type Winner = { id: number; event_id: number; user_id: string; code: string; mes
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
 const when = (s: string) => new Date(s).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
 const kindLabel = (k?: string) => (k === "teacher" ? "현장교사" : "재학생");
-const DEFAULT_MSG = "{닉네임} 님, 축하드려요! 🎉\n보육시각 행사에 당첨되어 [{쿠폰}] 쿠폰을 드려요.\n\n쿠폰 번호: {쿠폰번호}\n\n상품을 받으실 방법을 이 메시지에 답장으로 알려 주세요.";
+const DEFAULT_MSG = "{닉네임} 님, 축하드려요! 🎉\n보육시각 회원 추첨에 당첨되셨어요.\n\n쿠폰 번호: {쿠폰번호}\n\n상품을 받으실 방법을 이 메시지에 답장으로 알려 주세요.";
 
 function WinnerList({ winners }: { winners: Winner[] }) {
   return (
@@ -32,7 +32,7 @@ function WinnerList({ winners }: { winners: Winner[] }) {
 }
 
 function SendBox({ ev, winners, onSent }: { ev: Event; winners: Winner[]; onSent: () => void }) {
-  const [title, setTitle] = useState(`🎁 ${ev.title} 당첨 안내`);
+  const [title, setTitle] = useState("🎁 보육시각 회원 추첨 당첨 안내");
   const [body, setBody] = useState(DEFAULT_MSG);
   const [busy, setBusy] = useState(false);
   const left = winners.filter((w) => !w.messaged).length;
@@ -53,7 +53,7 @@ function SendBox({ ev, winners, onSent }: { ev: Event; winners: Winner[]; onSent
       <p className="font-bold">📮 당첨자에게 쿠폰 메시지 보내기 ({left}명)</p>
       <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100} aria-label="메시지 제목" />
       <textarea className={`${input} min-h-36`} value={body} onChange={(e) => setBody(e.target.value)} maxLength={3000} aria-label="메시지 내용" />
-      <p className="text-xs text-foreground/60">{"{닉네임}"}, {"{쿠폰번호}"}, {"{쿠폰}"} 자리에 당첨자마다 알맞은 내용이 자동으로 들어가요.</p>
+      <p className="text-xs text-foreground/60">{"{닉네임}"}, {"{쿠폰번호}"} 자리에 당첨자마다 알맞은 내용이 자동으로 들어가요.</p>
       <button onClick={send} disabled={busy || !title.trim() || !body.trim()} className="rounded-full bg-brand px-5 py-2 font-medium text-white disabled:opacity-50">
         {busy ? "보내는 중…" : `${left}명에게 보내기`}
       </button>
@@ -70,8 +70,6 @@ export default function AdminCoupons() {
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [groups, setGroups] = useState({ student: true, teacher: true });
   const [q, setQ] = useState("");
-  const [title, setTitle] = useState("");
-  const [coupon, setCoupon] = useState("");
   const [count, setCount] = useState(0); // 0 = 아직 인원을 정하지 않음
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -107,19 +105,19 @@ export default function AdminCoupons() {
   async function draw(e: React.FormEvent) {
     e.preventDefault();
     setErr("");
-    if (!title.trim() || !coupon.trim()) return setErr("행사 이름과 쿠폰 내용을 적어 주세요.");
     if (candidates.length === 0) return setErr("추첨 대상 회원이 없어요.");
     if (count < 1 || count > candidates.length) return setErr(`당첨 인원은 1명부터 ${candidates.length}명까지 정할 수 있어요.`);
     if (!confirm(`추첨 대상 ${candidates.length}명 중 ${count}명을 무작위로 뽑을까요?\n추첨 결과는 기록으로 남고 다시 뽑을 수 없어요.`)) return;
     setBusy(true);
     const { data, error } = await supabase.rpc("admin_draw_coupons", {
-      title: title.trim(), coupon: coupon.trim(), candidates: candidates.map((m) => m.id), n: count,
+      // 행사 이름은 추첨 날짜로 자동 기록
+      title: `${new Date().toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })} 회원 추첨`, coupon: "행사 쿠폰", candidates: candidates.map((m) => m.id), n: count,
     });
     setBusy(false);
     if (error) return setErr("추첨하지 못했어요. 잠시 후 다시 시도해 주세요.");
     setLatest(data as number);
     setOpenEvent(data as number);
-    setTitle(""); setCoupon(""); setCount(0);
+    setCount(0);
     reload();
   }
 
@@ -137,15 +135,7 @@ export default function AdminCoupons() {
 
       {!members ? <p className="text-sm text-foreground/60">불러오는 중…</p> : (
         <form onSubmit={draw} className="space-y-4">
-          <p className="font-bold">① 행사 정보</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-sm"><span className="mb-1 block font-medium">행사 이름</span>
-              <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60} placeholder="예: 11월 출석 이벤트" /></label>
-            <label className="block text-sm"><span className="mb-1 block font-medium">쿠폰 내용</span>
-              <input className={input} value={coupon} onChange={(e) => setCoupon(e.target.value)} maxLength={100} placeholder="예: 커피 기프티콘" /></label>
-          </div>
-
-          <p className="font-bold">② 추첨 대상 고르기</p>
+          <p className="font-bold">① 추첨 대상 고르기</p>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="font-medium">대상:</span>
             {([["student", "🎓 재학생"], ["teacher", "🧸 현장교사"]] as const).map(([k, label]) => (
@@ -189,7 +179,7 @@ export default function AdminCoupons() {
           </div>
           <p className="text-xs text-foreground/60">관리자 계정은 추첨 대상에서 자동으로 빠져요. 체크를 풀면 그 회원은 이번 추첨에서 빠져요.</p>
           <div className="space-y-2 rounded-2xl border-2 border-ink bg-white p-4">
-            <p className="font-bold">③ 뽑을 인원 정하기</p>
+            <p className="font-bold">② 뽑을 인원 정하기</p>
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" onClick={() => setCount((c) => Math.max(1, c - 1))} className="h-10 w-10 rounded-full border-2 border-ink text-xl font-bold" aria-label="1명 줄이기">−</button>
               <input type="number" min={1} max={candidates.length} value={count || ""} placeholder="0"
@@ -220,7 +210,7 @@ export default function AdminCoupons() {
                 <button onClick={() => setOpenEvent(open ? null : ev.id)} className="flex w-full flex-wrap items-center gap-2 text-left">
                   {latest === ev.id && <span className="kw rounded-full px-2 text-xs font-bold">방금 추첨</span>}
                   <b>{ev.title}</b>
-                  <span className="text-sm text-foreground/70">· {ev.coupon} · {ev.candidate_count}명 중 {ev.winner_count}명 · {when(ev.created_at)}</span>
+                  <span className="text-sm text-foreground/70">· {ev.candidate_count}명 중 {ev.winner_count}명 · {when(ev.created_at)}</span>
                   <span className="ml-auto text-xs text-foreground/60">{open ? "접기 ▲" : "당첨자 보기 ▼"}</span>
                 </button>
                 {open && (
