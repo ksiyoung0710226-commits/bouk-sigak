@@ -5,14 +5,6 @@ import { useAuth } from "./AuthProvider";
 import InquiryLink from "./InquiryLink";
 import ChatLink from "./ChatLink";
 
-export const NAV = [
-  { href: "/curriculum", label: "보육과정" },
-  { href: "/knowledge", label: "필수지식" },
-  { href: "/community", label: "커뮤니티" },
-  { href: "/qna", label: "Q&A" },
-  { href: "/news", label: "보육 뉴스" },
-];
-
 export default function Header() {
   const { session, profile, signOut, loading } = useAuth();
   return (
@@ -23,9 +15,6 @@ export default function Header() {
           <span className="logo-font text-3xl">보육시각</span>
         </Link>
         <nav className="flex flex-wrap items-center gap-4 text-sm font-medium">
-          {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className="font-bold decoration-lime decoration-4 underline-offset-4 hover:underline">{n.label}</Link>
-          ))}
           {!loading &&
             (session ? (
               <>
