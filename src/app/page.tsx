@@ -4,7 +4,8 @@ const cards = [
   { href: "/curriculum", t: "보육과정", d: "주기마다 바뀌는 보육과정을 한눈에 정리해요.", e: "📚" },
   { href: "/knowledge", t: "아동보육 필수지식", d: "발달이론, 영유아 발달, 교재교구 등 12개 주제의 기본 지식.", e: "🧠" },
   { href: "/community", t: "커뮤니티", d: "고민, 조언, 응원을 나누는 재학생·교사 공간.", e: "💬" },
-  { href: "/tips", t: "교사 노하우", d: "놀이자료 활용법과 추천 방법을 교사끼리 공유.", e: "🧸" },
+  { href: "/qna", t: "Q&A", d: "재학생이 묻고 현장 교사가 답하는 질문·답변 공간.", e: "🙋" },
+  { href: "/news", t: "보육 뉴스", d: "구글 뉴스에 올라온 최신 보육 소식을 모아 봐요.", e: "📰" },
 ];
 
 export default function Home() {
@@ -26,7 +27,7 @@ export default function Home() {
           </Link>
         </div>
       </section>
-      <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (
           <Link key={c.href} href={c.href} className="card p-6">
             <div className="text-3xl">{c.e}</div>

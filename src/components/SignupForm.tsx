@@ -46,7 +46,7 @@ export default function SignupForm() {
       return setError("가입에 실패했어요: " + error.message);
     }
     // 이메일 인증이 꺼져 있으면 바로 로그인된 세션이 생깁니다.
-    if (data.session) window.location.href = kind === "teacher" ? "/tips" : "/community";
+    if (data.session) window.location.href = kind === "teacher" ? "/qna" : "/community";
     else setDone(true);
   }
 
@@ -79,7 +79,7 @@ export default function SignupForm() {
         </div>
         <p className="mt-2 text-xs text-foreground/60">
           유형은 본인이 선택하는 표시이며, 별도의 서류 인증은 하지 않아요.
-          {kind === "teacher" && " 교사 노하우 게시판에 글을 쓰려면 가입 후 교사 인증 코드가 필요해요."}
+          {kind === "teacher" && " 가입 후 교사 인증 코드를 입력하면 Q&amp;A 답변에 ‘인증 교사’ 표시가 붙어요."}
         </p>
       </div>
 

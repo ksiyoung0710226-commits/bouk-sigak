@@ -7,7 +7,8 @@ export const NAV = [
   { href: "/curriculum", label: "보육과정" },
   { href: "/knowledge", label: "필수지식" },
   { href: "/community", label: "커뮤니티" },
-  { href: "/tips", label: "교사 노하우" },
+  { href: "/qna", label: "Q&A" },
+  { href: "/news", label: "보육 뉴스" },
 ];
 
 export default function Header() {

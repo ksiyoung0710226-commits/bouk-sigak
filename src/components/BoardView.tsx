@@ -4,13 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "./AuthProvider";
 
+type Author = { nickname: string; kind: string; teacher_verified: boolean } | null;
 type Post = {
   id: number; category: string; title: string; body: string; author_id: string; created_at: string;
-  profiles: { nickname: string; kind: string } | null;
+  profiles: Author; comments: { count: number }[];
 };
 type Comment = {
   id: number; body: string; author_id: string; created_at: string;
-  profiles: { nickname: string; kind: string } | null;
+  profiles: Author;
 };
 
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
@@ -19,7 +20,8 @@ const when = (s: string) => new Date(s).toLocaleDateString("ko-KR", { month: "lo
 
 export default function BoardView({
   board, categories, canWrite, writeHint,
-}: { board: "community" | "tips"; categories: string[]; canWrite: boolean; writeHint?: React.ReactNode }) {
+}: { board: "community" | "qna"; categories: string[]; canWrite: boolean; writeHint?: React.ReactNode }) {
+  const qna = board === "qna";
   const { session, profile } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [filter, setFilter] = useState("전체");
@@ -34,7 +36,7 @@ export default function BoardView({
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("posts")
-      .select("id,category,title,body,author_id,created_at,profiles(nickname,kind)")
+      .select("id,category,title,body,author_id,created_at,profiles(nickname,kind,teacher_verified),comments(count)")
       .eq("board", board)
       .order("created_at", { ascending: false })
       .limit(100);
@@ -86,7 +88,7 @@ export default function BoardView({
         </div>
         {canWrite && (
           <button onClick={() => setWriting((v) => !v)} className="rounded-full bg-brand px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-dark">
-            {writing ? "닫기" : "✏️ 글쓰기"}
+            {writing ? "닫기" : qna ? "🙋 질문하기" : "✏️ 글쓰기"}
           </button>
         )}
       </div>
@@ -97,24 +99,31 @@ export default function BoardView({
           <select className={input} value={category} onChange={(e) => setCategory(e.target.value)}>
             {categories.map((c) => <option key={c}>{c}</option>)}
           </select>
-          <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목 (100자 이내)" maxLength={100} required />
-          <textarea className={`${input} min-h-40`} value={body} onChange={(e) => setBody(e.target.value)} placeholder="내용 (5000자 이내)" maxLength={5000} required />
+          <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={qna ? "질문 제목 (100자 이내)" : "제목 (100자 이내)"} maxLength={100} required />
+          <textarea className={`${input} min-h-40`} value={body} onChange={(e) => setBody(e.target.value)} placeholder={qna ? "궁금한 점을 자세히 적어 주세요 (5000자 이내)" : "내용 (5000자 이내)"} maxLength={5000} required />
           {msg && <p className="text-sm text-red-700">{msg}</p>}
-          <button className="rounded-full bg-brand px-5 py-2 font-medium text-white hover:bg-brand-dark">올리기</button>
+          <button className="rounded-full bg-brand px-5 py-2 font-medium text-white hover:bg-brand-dark">{qna ? "질문 올리기" : "올리기"}</button>
         </form>
       )}
 
       {!loaded ? <p className="text-foreground/60">불러오는 중…</p> : shown.length === 0 ? (
-        <p className="card p-8 text-center text-foreground/60">아직 글이 없어요. 첫 글을 남겨 보세요!</p>
+        <p className="card p-8 text-center text-foreground/60">{qna ? "아직 질문이 없어요. 첫 질문을 남겨 보세요!" : "아직 글이 없어요. 첫 글을 남겨 보세요!"}</p>
       ) : (
         <ul className="divide-y divide-line card">
           {shown.map((p) => (
             <li key={p.id} className="p-4">
               <button className="w-full text-left" onClick={() => setOpen(open === p.id ? null : p.id)} aria-expanded={open === p.id}>
                 <span className="text-xs text-brand-dark">[{p.category}]</span>
-                <p className="font-medium">{p.title}</p>
+                <p className="font-medium">
+                  {qna && <span className="mr-1 font-bold">Q.</span>}{p.title}
+                  {qna && (
+                    <span className={`ml-2 rounded-full px-2 py-0.5 align-middle text-xs ${(p.comments?.[0]?.count ?? 0) > 0 ? "bg-lime" : "bg-soft text-foreground/60"}`}>
+                      {(p.comments?.[0]?.count ?? 0) > 0 ? `답변 ${p.comments[0].count}` : "답변 대기"}
+                    </span>
+                  )}
+                </p>
               </button>
-              <AuthorLine nickname={p.profiles?.nickname} kind={p.profiles?.kind} createdAt={p.created_at}
+              <AuthorLine author={p.profiles} createdAt={p.created_at}
                 onReport={p.author_id === session?.user.id ? undefined : () => report("post_id", p.id)} />
               {open === p.id && (
                 <div className="mt-3 border-t border-line pt-3">
@@ -124,7 +133,7 @@ export default function BoardView({
                       <button onClick={() => remove(p.id)} className="text-red-700 underline">삭제</button>
                     </div>
                   )}
-                  <Comments postId={p.id} onReport={(id) => report("comment_id", id)} />
+                  <Comments postId={p.id} qna={qna} onReport={(id) => report("comment_id", id)} onChange={load} />
                 </div>
               )}
             </li>
@@ -135,7 +144,7 @@ export default function BoardView({
   );
 }
 
-function Comments({ postId, onReport }: { postId: number; onReport: (id: number) => void }) {
+function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: boolean; onReport: (id: number) => void; onChange: () => void }) {
   const { session, profile } = useAuth();
   const [items, setItems] = useState<Comment[]>([]);
   const [text, setText] = useState("");
@@ -143,7 +152,7 @@ function Comments({ postId, onReport }: { postId: number; onReport: (id: number)
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("comments")
-      .select("id,body,author_id,created_at,profiles(nickname,kind)")
+      .select("id,body,author_id,created_at,profiles(nickname,kind,teacher_verified)")
       .eq("post_id", postId)
       .order("created_at");
     setItems((data as unknown as Comment[]) ?? []);
@@ -156,19 +165,24 @@ function Comments({ postId, onReport }: { postId: number; onReport: (id: number)
     await supabase.from("comments").insert({ post_id: postId, body: text.trim(), author_id: session.user.id });
     setText("");
     load();
+    onChange();
   }
   async function del(id: number) {
+    if (!confirm(qna ? "이 답변을 삭제할까요?" : "이 댓글을 삭제할까요?")) return;
     await supabase.from("comments").delete().eq("id", id);
     load();
+    onChange();
   }
+  const isTeacherAnswer = (c: Comment) => qna && c.profiles?.kind === "teacher" && c.profiles.teacher_verified;
 
   return (
     <div className="mt-4">
-      <p className="mb-2 text-sm font-bold">댓글 {items.length}</p>
+      <p className="mb-2 text-sm font-bold">{qna ? "답변" : "댓글"} {items.length}</p>
       <ul className="space-y-2">
         {items.map((c) => (
-          <li key={c.id} className="note p-3 text-sm">
-            <AuthorLine nickname={c.profiles?.nickname} kind={c.profiles?.kind} createdAt={c.created_at}
+          <li key={c.id} className={`note p-3 text-sm ${isTeacherAnswer(c) ? "border-2 border-ink" : ""}`}>
+            {isTeacherAnswer(c) && <p className="mb-1 text-xs font-bold"><span className="kw">✅ 인증 교사 답변</span></p>}
+            <AuthorLine author={c.profiles} createdAt={c.created_at}
               onReport={c.author_id === session?.user.id ? undefined : () => onReport(c.id)} />
             <p className="whitespace-pre-wrap">{c.body}</p>
             {(c.author_id === session?.user.id || profile?.is_admin) && (
@@ -180,7 +194,7 @@ function Comments({ postId, onReport }: { postId: number; onReport: (id: number)
         ))}
       </ul>
       <form onSubmit={add} className="mt-3 flex gap-2">
-        <input className={input} value={text} onChange={(e) => setText(e.target.value)} placeholder="따뜻한 댓글을 남겨 주세요" maxLength={1000} />
+        <input className={input} value={text} onChange={(e) => setText(e.target.value)} placeholder={qna ? "알고 있는 내용이나 경험을 답변으로 남겨 주세요" : "따뜻한 댓글을 남겨 주세요"} maxLength={1000} />
         <button className="shrink-0 rounded-full bg-brand px-4 text-sm font-medium text-white">등록</button>
       </form>
     </div>
@@ -189,8 +203,10 @@ function Comments({ postId, onReport }: { postId: number; onReport: (id: number)
 
 // 작성자 줄: 닉네임 바로 옆에 신고 버튼 (내 글·댓글에는 신고 버튼을 숨김)
 function AuthorLine({
-  nickname, kind, createdAt, onReport,
-}: { nickname?: string; kind?: string; createdAt: string; onReport?: () => void }) {
+  author, createdAt, onReport,
+}: { author: Author; createdAt: string; onReport?: () => void }) {
+  const nickname = author?.nickname;
+  const kind = author?.kind;
   return (
     <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-foreground/60">
       <span className="font-bold text-foreground/80">{nickname ?? "탈퇴한 회원"}</span>
@@ -199,7 +215,7 @@ function AuthorLine({
           🚩 신고
         </button>
       )}
-      <span>· {kindLabel(kind)} · {when(createdAt)}</span>
+      <span>· {kindLabel(kind)}{kind === "teacher" && author?.teacher_verified ? " ✅" : ""} · {when(createdAt)}</span>
     </p>
   );
 }

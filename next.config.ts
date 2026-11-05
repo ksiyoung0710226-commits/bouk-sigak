@@ -13,6 +13,7 @@ const moved: Record<string, string> = {
   "/knowledge/partnership": "/knowledge/teacher-character/parents-relation",
   "/knowledge/ethics": "/knowledge/teacher-character/ethics",
   "/knowledge/thinkers": "/knowledge/program/approaches",
+  "/tips": "/qna",
 };
 
 const nextConfig: NextConfig = {

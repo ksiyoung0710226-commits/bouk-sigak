@@ -79,6 +79,14 @@ h1, h2, h3, .font-display {
   box-decoration-break: clone;
 }
 
+/* 파란 형광펜 (안내 문구용) */
+.hl-blue {
+  background: linear-gradient(transparent 50%, #a8dcff 50%, #a8dcff 94%, transparent 94%);
+  padding: 0 0.15em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
 /* 키워드 칩 */
 .kw {
   display: inline-block;

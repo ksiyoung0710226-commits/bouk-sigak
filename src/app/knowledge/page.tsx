@@ -11,6 +11,9 @@ export default function Knowledge() {
         title="아동보육 필수지식"
         desc="과목을 고르면 단원 목록이 나오고, 단원을 누르면 자세한 내용이 열려요."
       />
+      <p className="-mt-4 mb-8 text-base font-bold">
+        <span className="hl-blue">이 웹사이트는 정확한 자료 제공을 위해 노력하나, 꼭 전공 서적을 참고하여 주시기 바랍니다.</span>
+      </p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {subjects.map((s) => (
           <Link key={s.slug} href={`/knowledge/${s.slug}`} className="card p-6">

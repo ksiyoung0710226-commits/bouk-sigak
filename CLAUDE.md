@@ -17,7 +17,10 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - `src/lib/knowledge/sources.ts` : 과목별 출처(고시문·해설서 / 법령 / 공식 기관 / 학술 원전). 링크는 열리는 것만 넣을 것.
 - `src/lib/curriculum.ts` : 교육부 고시문(제2024-23호) 원문에서 그대로 옮긴 보육과정 내용범주·내용. 문구를 임의로 바꾸지 말 것.
 - `src/app/knowledge/[subject]/[unit]` : 과목 → 단원 화면. `/curriculum` : 보육과정 탭 화면.
-- 커뮤니티/교사 노하우/가입/로그인: `src/components/BoardView.tsx`, `SignupForm.tsx`, `AuthProvider.tsx` 등. 커뮤니티와 교사 노하우는 **로그인한 회원만 볼 수 있고** 이는 DB 보안 규칙(RLS)이 강제함.
+- 커뮤니티/Q&A/가입/로그인: `src/components/BoardView.tsx`, `SignupForm.tsx`, `AuthProvider.tsx` 등. 커뮤니티와 Q&A는 **로그인한 회원만 볼 수 있고** 이는 DB 보안 규칙(RLS)이 강제함.
+- Q&A `/qna` (예전 '교사 노하우' `/tips` → 리다이렉트, 006에서 board 'tips'→'qna'): 모든 회원이 질문·답변 가능. 답변 = comments. 인증 교사(kind=teacher & teacher_verified) 답변에 '✅ 인증 교사 답변' 표시. 미인증 교사에게만 TeacherCode 입력칸 노출.
+- 보육 뉴스 `/news`: `src/lib/news.ts`가 구글 뉴스 RSS(보육/어린이집/보육교사/영유아, 최근 7일) 제목·언론사·날짜·링크만 가져와 `use cache` + cacheLife(revalidate 5분)로 갱신. 기사 본문은 가져오지 않음. 링크는 news.google.com만 허용.
+- `/knowledge` 제목 아래 파란 형광펜(`.hl-blue`) 안내: '전공 서적을 참고' 문구(사용자 요청).
 - DB 스키마: `supabase/migrations/*.sql`. 실행: `npx supabase db query --remote=soiiihaivulcqqomzotb --file <파일> --yes`
 
 ## 콘텐츠 규칙 (신뢰성이 최우선 — 사용자가 "무조건 신뢰할 만한 자료"를 요구함)
@@ -28,7 +31,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 1·2차 검증을 거쳤으나 법 조문 원문은 대부분 직접 못 열어 검색 요약에 의존함. 공개 전 교재 대조 필요 항목: 아동건강교육(손 씻기 시점·방법), 아동학대·신고, 보육행정(법·제도), 프로젝트 접근법 3단계, 이차 정서 출현 시기, 볼비 단계 월령.
 
 ## 디자인 규칙 (사용자 확정)
-- 배경 버터 옐로우 #fff1b0, 본문 차콜 #29251F, 카드 포인트 라벤더 #C9B9E8, 형광펜·키워드 라임 #D8EC77. 토큰은 `src/app/globals.css`.
+- 배경 버터 옐로우 #fff1b0, 본문 차콜 #29251F, 카드 포인트 라벤더 #C9B9E8, 형광펜·키워드 라임 #D8EC77, 안내용 파란 형광펜 `.hl-blue` #a8dcff. 토큰은 `src/app/globals.css`.
 - 카드: `.card`, 라벤더 하드 섀도. 키워드: `.kw`. 핵심 문장: `.note`, `.hl`.
 - 로고 "보육시각": **차콜색 + 둥근 글꼴 Jua** (`.logo-font`). **글자에 검정 외곽선 금지, 흰 글씨 라벨 금지**(사용자가 싫어함). 다른 제목은 Noto Sans KR 굵게(`.sticker` = 외곽선 없는 차콜).
 - 변경 후엔 반드시 배포하고 라이브에서 확인한 뒤 알릴 것(사용자가 배포 전 화면을 보고 혼란스러워한 적 있음).
