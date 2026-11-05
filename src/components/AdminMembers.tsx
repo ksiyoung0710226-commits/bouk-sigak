@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
@@ -30,6 +31,52 @@ const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString("ko-KR") :
 function kindLabel(m: Member) {
   if (m.kind === "teacher") return m.teacher_verified ? "현장교사(인증)" : "현장교사(미인증)";
   return "재학생";
+}
+
+function MessageBox({ m, onClose }: { m: Member; onClose: () => void }) {
+  const [title, setTitle] = useState("🎁 상품 전달 안내");
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [sentId, setSentId] = useState<number | null>(null);
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !body.trim()) return;
+    setBusy(true);
+    setErr("");
+    const { data, error } = await supabase.rpc("admin_start_inquiry", { target: m.id, title: title.trim(), body: body.trim() });
+    setBusy(false);
+    if (error) return setErr("메시지를 보내지 못했어요. 잠시 후 다시 시도해 주세요.");
+    setSentId(data as number);
+  }
+
+  if (sentId)
+    return (
+      <div className="mt-3 space-y-2 rounded-xl border-2 border-ink bg-lime/50 p-4 text-sm">
+        <p className="font-bold">✅ {m.nickname} 님에게 메시지를 보냈어요.</p>
+        <p>회원의 ‘💌 문의하기’에 알림이 떠요. 답장도 📮 문의함에서 이어서 주고받을 수 있어요.</p>
+        <div className="flex gap-3">
+          <Link href="/inquiry" className="font-bold underline">문의함에서 대화 보기</Link>
+          <button onClick={onClose} className="underline">닫기</button>
+        </div>
+      </div>
+    );
+
+  return (
+    <form onSubmit={send} className="mt-3 space-y-2 rounded-xl border-2 border-ink bg-white p-4 text-sm">
+      <p className="font-bold">💬 {m.nickname} 님에게 1:1 메시지</p>
+      <input className="w-full rounded-lg border border-line px-3 py-2" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100} required aria-label="제목" />
+      <textarea className="min-h-28 w-full rounded-lg border border-line px-3 py-2" value={body} onChange={(e) => setBody(e.target.value)} maxLength={3000} required
+        placeholder="예: 이벤트에 당첨되셨어요! 상품을 보내 드리려고 하니 받으실 방법을 답장으로 알려 주세요." />
+      <p className="text-xs text-foreground/60">이 대화는 이 회원과 관리자만 볼 수 있어요. 수락 없이 바로 전달돼요.</p>
+      {err && <p className="text-red-700">{err}</p>}
+      <div className="flex gap-2">
+        <button disabled={busy || !body.trim()} className="rounded-full bg-brand px-4 py-1.5 font-medium text-white disabled:opacity-50">{busy ? "보내는 중…" : "보내기"}</button>
+        <button type="button" onClick={onClose} className="rounded-full border border-line bg-white px-4 py-1.5">취소</button>
+      </div>
+    </form>
+  );
 }
 
 function DeleteBox({ m, onDone, onCancel }: { m: Member; onDone: () => void; onCancel: () => void }) {
@@ -78,6 +125,7 @@ export default function AdminMembers() {
   const [error, setError] = useState("");
   const [q, setQ] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [messaging, setMessaging] = useState<string | null>(null);
 
   const isAdmin = !!profile?.is_admin;
   const [version, setVersion] = useState(0);
@@ -108,7 +156,7 @@ export default function AdminMembers() {
     <section id="admin-members" className="card scroll-mt-24 space-y-4 p-6">
       <div>
         <h2 className="text-xl">🛠 회원 관리 <span className="text-sm font-normal text-foreground/60">(관리자만 보여요)</span></h2>
-        <p className="mt-1 text-sm text-foreground/70">가입한 회원을 확인하고, 필요하면 강제 탈퇴시킬 수 있어요.</p>
+        <p className="mt-1 text-sm text-foreground/70">가입한 회원을 확인하고, 1:1 메시지(상품 전달 안내 등)를 보내거나 필요하면 강제 탈퇴시킬 수 있어요.</p>
       </div>
       {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {!members && !error && <p className="text-sm text-foreground/60">불러오는 중…</p>}
@@ -154,12 +202,20 @@ export default function AdminMembers() {
                       {kindLabel(m)} · 가입 {fmt(m.created_at)} · 최근 로그인 {fmt(m.last_sign_in_at)} · 글 {m.post_count} · 댓글 {m.comment_count}
                     </p>
                   </div>
-                  {!m.is_admin && deleting !== m.id && (
-                    <button onClick={() => setDeleting(m.id)} className="rounded-full border border-red-700 px-3 py-1 text-sm text-red-700 hover:bg-red-50">
-                      강제 탈퇴
-                    </button>
-                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {m.id !== profile.id && messaging !== m.id && (
+                      <button onClick={() => { setMessaging(m.id); setDeleting(null); }} className="rounded-full border border-ink bg-white px-3 py-1 text-sm font-medium hover:bg-soft">
+                        💬 1:1 메시지
+                      </button>
+                    )}
+                    {!m.is_admin && deleting !== m.id && (
+                      <button onClick={() => { setDeleting(m.id); setMessaging(null); }} className="rounded-full border border-red-700 px-3 py-1 text-sm text-red-700 hover:bg-red-50">
+                        강제 탈퇴
+                      </button>
+                    )}
+                  </div>
                 </div>
+                {messaging === m.id && <MessageBox m={m} onClose={() => setMessaging(null)} />}
                 {deleting === m.id && (
                   <DeleteBox m={m} onCancel={() => setDeleting(null)} onDone={() => { setDeleting(null); load(); }} />
                 )}

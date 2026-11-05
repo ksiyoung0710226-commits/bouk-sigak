@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 
 type Inquiry = {
   id: number; user_id: string; title: string; status: "open" | "answered" | "closed";
-  admin_unread: boolean; user_unread: boolean; created_at: string; updated_at: string;
+  admin_unread: boolean; user_unread: boolean; created_at: string; updated_at: string; started_by_admin: boolean;
   profiles: { nickname: string } | null;
 };
 type Message = {
@@ -26,6 +26,13 @@ const STATUS: Record<Inquiry["status"], { label: string; cls: string }> = {
   answered: { label: "답변 완료", cls: "bg-lime" },
   closed: { label: "종료", cls: "bg-line text-foreground/60" },
 };
+
+// 관리자가 먼저 보낸 메시지는 '관리자 메시지'로 표시 (종료되면 '종료')
+function StatusBadge({ i }: { i: Inquiry }) {
+  if (i.started_by_admin && i.status !== "closed")
+    return <span className="rounded-full border border-ink bg-white px-2 py-0.5 text-xs font-bold">📮 관리자 메시지</span>;
+  return <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS[i.status].cls}`}>{STATUS[i.status].label}</span>;
+}
 
 // 헤더 알림 숫자를 바로 갱신하도록 알림
 const notifyHeader = () => window.dispatchEvent(new Event("inquiry:changed"));
@@ -131,7 +138,7 @@ function Thread({ inquiry, isAdmin, onBack, onChanged }: { inquiry: Inquiry; isA
             {when(inquiry.created_at)}
           </p>
         </div>
-        <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS[inquiry.status].cls}`}>{STATUS[inquiry.status].label}</span>
+        <StatusBadge i={inquiry} />
       </div>
 
       {!messages ? (
@@ -186,7 +193,7 @@ function Inner() {
     let alive = true;
     supabase
       .from("inquiries")
-      .select("id,user_id,title,status,admin_unread,user_unread,created_at,updated_at,profiles(nickname)")
+      .select("id,user_id,title,status,admin_unread,user_unread,created_at,updated_at,started_by_admin,profiles(nickname)")
       .order("updated_at", { ascending: false })
       .limit(200)
       .then(({ data }) => { if (alive) setList((data as unknown as Inquiry[]) ?? []); });
@@ -232,7 +239,7 @@ function Inner() {
                     {isAdmin && <>{i.profiles?.nickname ?? "탈퇴한 회원"} · </>}최근 {when(i.updated_at)}
                   </p>
                 </div>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${STATUS[i.status].cls}`}>{STATUS[i.status].label}</span>
+                <span className="shrink-0"><StatusBadge i={i} /></span>
               </button>
             </li>
           ))}
@@ -245,7 +252,7 @@ function Inner() {
 export default function InquiryPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <PageTitle title="1:1 문의" desc="궁금한 점이나 불편한 점을 관리자에게 바로 보낼 수 있어요. 문의 내용은 나와 관리자만 볼 수 있어요." />
+      <PageTitle title="1:1 문의" desc="궁금한 점이나 불편한 점을 관리자에게 바로 보낼 수 있어요. 관리자가 보내는 안내(상품 전달 등)도 여기로 와요. 대화는 나와 관리자만 볼 수 있어요." />
       <RequireAuth>
         <Inner />
       </RequireAuth>

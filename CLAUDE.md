@@ -30,6 +30,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 교사 근무지: `CenterPicker` ① 지역 → ② 어린이집 분류(유형) 버튼. 어린이집 이름은 받지 않음(사용자 결정).
 - 회원 관리 목록은 재학생 / 현장교사 두 칸, 검색은 두 칸에 함께 적용. `/profile`은 max-w-5xl, 관리자 칸만 넓고 나머지 폼은 max-w-2xl.
 - 회원 1:1 채팅(009) `/chat`: `dm_threads`(요청 멘트 intro, pending→accepted/declined, 같은 두 사람 사이 1개·거절 후 재요청 불가) + `dm_messages`(수락 후에만). RPC `respond_dm`, `mark_dm_read`. 관리자도 대화 내용은 못 봄. 헤더 `ChatLink` 배지(받은 요청+안 읽은 대화), 대화방은 5초마다 새로고침.
+- 관리자 → 회원 1:1 메시지(012, 상품 전달용): 회원 관리 카드의 '💬 1:1 메시지' → RPC `admin_start_inquiry`(관리자만)로 inquiries 방 생성(`started_by_admin`), 수락 없이 전달. 회원은 '💌 문의하기'에서 알림과 함께 받고 답장 가능, 목록에 '📮 관리자 메시지' 표시.
 - 홈 상단 버튼은 '보육시각이란?' 하나 → `/about` 소개 페이지(사용자 요청으로 '커뮤니티 둘러보기', '보육과정 보기' 제거).
 - `/knowledge` 제목 아래 파란 형광펜(`.hl-blue`) 안내: '전공 서적을 참고' 문구(사용자 요청).
 - DB 스키마: `supabase/migrations/*.sql`. 실행: `npx supabase db query --remote=soiiihaivulcqqomzotb --file <파일> --yes`
