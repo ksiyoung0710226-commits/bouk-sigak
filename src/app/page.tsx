@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <section className="panel-lav p-10 text-center shadow-[5px_5px_0_var(--ink)]">
-        <h1 className="inline-block rounded-3xl bg-ink px-8 py-2 text-6xl font-black tracking-tight text-white shadow-[5px_5px_0_var(--sun)] sm:text-7xl">보육시각</h1>
+        <h1 className="sticker text-6xl sm:text-7xl">보육시각</h1>
         <p className="mt-4 text-lg">
           아동보육과 재학생과 현장 보육교사가
           <br />
