@@ -19,7 +19,8 @@ export type Unit = {
   sections: Section[];
 };
 
-export type Reference = { name: string; url?: string; note?: string };
+export type SourceKind = "guide" | "law" | "institution" | "literature";
+export type Reference = { kind: SourceKind; name: string; url?: string; note?: string };
 
 export type Subject = {
   slug: string;
