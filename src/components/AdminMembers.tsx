@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import PageTitle from "@/components/PageTitle";
-import RequireAuth from "@/components/RequireAuth";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 
@@ -33,7 +31,7 @@ function DeleteBox({ m, onDone, onCancel }: { m: Member; onDone: () => void; onC
 
   async function remove() {
     if (typed.trim() !== m.nickname) return;
-    if (!confirm(`'${m.nickname}' 회원을 정말 탈퇴시킬까요? 되돌릴 수 없어요.`)) return;
+    if (!confirm(`'${m.nickname}' 회원을 정말 강제 탈퇴시킬까요? 되돌릴 수 없어요.`)) return;
     setBusy(true);
     const { error } = await supabase.rpc("admin_delete_member", { target: m.id });
     setBusy(false);
@@ -43,7 +41,7 @@ function DeleteBox({ m, onDone, onCancel }: { m: Member; onDone: () => void; onC
         : "탈퇴 처리에 실패했어요. 잠시 후 다시 시도해 주세요.";
       return setErr(t);
     }
-    alert(`'${m.nickname}' 회원을 탈퇴 처리했어요.`);
+    alert(`'${m.nickname}' 회원을 강제 탈퇴시켰어요.`);
     onDone();
   }
 
@@ -58,7 +56,7 @@ function DeleteBox({ m, onDone, onCancel }: { m: Member; onDone: () => void; onC
       {err && <p className="text-red-700">{err}</p>}
       <div className="flex gap-2">
         <button onClick={remove} disabled={busy || typed.trim() !== m.nickname} className="rounded-full bg-red-700 px-4 py-1.5 font-medium text-white disabled:opacity-40">
-          {busy ? "처리 중…" : "탈퇴시키기"}
+          {busy ? "처리 중…" : "강제 탈퇴"}
         </button>
         <button onClick={onCancel} className="rounded-full border border-line bg-white px-4 py-1.5">취소</button>
       </div>
@@ -66,7 +64,7 @@ function DeleteBox({ m, onDone, onCancel }: { m: Member; onDone: () => void; onC
   );
 }
 
-function Inner() {
+export default function AdminMembers() {
   const { profile, loading } = useAuth();
   const [members, setMembers] = useState<Member[] | null>(null);
   const [error, setError] = useState("");
@@ -94,16 +92,19 @@ function Inner() {
     return s ? members.filter((m) => m.nickname.toLowerCase().includes(s) || m.email.toLowerCase().includes(s)) : members;
   }, [members, q]);
 
-  if (loading || !profile) return <p className="py-20 text-center text-foreground/60">불러오는 중…</p>;
-  if (!profile.is_admin)
-    return <div className="card mx-auto max-w-md p-8 text-center font-bold">🔒 관리자만 볼 수 있는 페이지예요.</div>;
-  if (error) return <p className="card p-6 text-red-700">{error}</p>;
-  if (!members) return <p className="py-20 text-center text-foreground/60">불러오는 중…</p>;
+  if (loading || !profile?.is_admin) return null;
 
-  const teachers = members.filter((m) => m.kind === "teacher").length;
+  const teachers = members?.filter((m) => m.kind === "teacher").length ?? 0;
 
   return (
-    <div className="space-y-4">
+    <section id="admin-members" className="card scroll-mt-24 space-y-4 p-6">
+      <div>
+        <h2 className="text-xl">🛠 회원 관리 <span className="text-sm font-normal text-foreground/60">(관리자만 보여요)</span></h2>
+        <p className="mt-1 text-sm text-foreground/70">가입한 회원을 확인하고, 필요하면 강제 탈퇴시킬 수 있어요.</p>
+      </div>
+      {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {!members && !error && <p className="text-sm text-foreground/60">불러오는 중…</p>}
+      {members && (<>
       <div className="panel-lav flex flex-wrap gap-x-6 gap-y-1 p-4 text-sm">
         <span>전체 회원 <b>{members.length}</b>명</span>
         <span>재학생 <b>{members.length - teachers}</b>명</span>
@@ -132,7 +133,7 @@ function Inner() {
               </div>
               {!m.is_admin && deleting !== m.id && (
                 <button onClick={() => setDeleting(m.id)} className="rounded-full border border-red-700 px-3 py-1 text-sm text-red-700 hover:bg-red-50">
-                  탈퇴시키기
+                  강제 탈퇴
                 </button>
               )}
             </div>
@@ -143,18 +144,9 @@ function Inner() {
         ))}
         {shown.length === 0 && <li className="py-8 text-center text-foreground/60">찾는 회원이 없어요.</li>}
       </ul>
-      <p className="text-xs text-foreground/60">관리자 계정은 이 화면에서 탈퇴시킬 수 없어요. 내 계정 탈퇴는 ‘내 정보’에서 할 수 있어요.</p>
-    </div>
+      <p className="text-xs text-foreground/60">관리자 계정은 여기서 탈퇴시킬 수 없어요. 내 계정 탈퇴는 이 페이지 아래 ‘회원 탈퇴’에서 할 수 있어요.</p>
+      </>)}
+    </section>
   );
 }
 
-export default function AdminMembersPage() {
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <PageTitle title="회원 관리" desc="가입한 회원을 확인하고, 필요하면 탈퇴 처리할 수 있어요. 관리자만 볼 수 있어요." />
-      <RequireAuth>
-        <Inner />
-      </RequireAuth>
-    </div>
-  );
-}

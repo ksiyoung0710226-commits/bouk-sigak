@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import PageTitle from "@/components/PageTitle";
 import RequireAuth from "@/components/RequireAuth";
+import AdminMembers from "@/components/AdminMembers";
 import { useAuth } from "@/components/AuthProvider";
 import { SAVED_EMAIL_KEY, nicknameErrorMessage, supabase } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
@@ -248,6 +249,7 @@ function Inner() {
         <p><b>{profile?.nickname}</b> · {profile?.kind === "teacher" ? "현장교사" : "재학생"}{profile?.is_admin ? " · 관리자" : ""}</p>
         <p className="mt-1 text-foreground/75">{session?.user.email}</p>
       </div>
+      <AdminMembers />
       <NicknameSection />
       <EmailSection />
       <PasswordSection />
@@ -258,7 +260,7 @@ function Inner() {
 
 export default function ProfilePage() {
   return (
-    <div className="mx-auto max-w-xl px-4 py-10">
+    <div className="mx-auto max-w-2xl px-4 py-10">
       <PageTitle title="내 정보" desc="닉네임, 이메일, 비밀번호를 바꾸거나 탈퇴할 수 있어요." />
       <RequireAuth>
         <Inner />

@@ -40,7 +40,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 탈퇴: `delete_my_account()`(004) → auth.users 삭제 → profiles/posts/comments/reports cascade 삭제. 내 글에 달린 남의 댓글도 함께 지워짐(사용자에게 안내함).
 - 로그인: '이메일 저장'(localStorage), '자동 로그인'(켜면 localStorage, 끄면 sessionStorage에 세션 저장, `src/lib/supabase.ts`). 비밀번호는 사이트가 저장하지 않고 브라우저 비밀번호 저장 기능(autocomplete 속성)에 맡김.
 - 신고 버튼은 글·댓글 모두 닉네임 바로 옆(`AuthorLine` in BoardView). 내 글에는 신고 버튼 없음.
-- 관리자 회원 관리 `/admin/members`(헤더 '🛠 회원 관리', 관리자에게만 보임): 회원 목록(이메일·닉네임·유형·가입일·최근 로그인·글/댓글 수, 검색), 강제 탈퇴(닉네임 입력 확인). DB 함수 `admin_list_members()`, `admin_delete_member(uuid)`(005) — 관리자 여부를 DB가 확인. 본인·다른 관리자는 삭제 불가.
+- 관리자 회원 관리: `/profile` 내 정보 칸 바로 아래 `AdminMembers` 컴포넌트(`src/components/AdminMembers.tsx`, 관리자에게만 렌더링; 헤더 "🛠 회원 관리" → `/profile#admin-members`): 회원 목록(이메일·닉네임·유형·가입일·최근 로그인·글/댓글 수, 검색), 강제 탈퇴(닉네임 입력 확인). DB 함수 `admin_list_members()`, `admin_delete_member(uuid)`(005) — 관리자 여부를 DB가 확인. 본인·다른 관리자는 삭제 불가.
 
 ## 남은 할 일
 1. 관리자용 신고 목록 화면(신고는 reports 표에 저장되지만 아직 볼 화면이 없음).
