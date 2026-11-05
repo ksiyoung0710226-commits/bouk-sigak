@@ -23,7 +23,10 @@ export default function Header() {
                   {profile?.is_admin ? " (관리자)" : ""}
                 </Link>
                 {profile?.is_admin && (
-                  <Link href="/profile#admin-members" className="font-bold decoration-lime decoration-4 underline-offset-4 hover:underline">🛠 회원 관리</Link>
+                  <>
+                    <Link href="/profile#admin-members" className="font-bold decoration-lime decoration-4 underline-offset-4 hover:underline">🛠 회원 관리</Link>
+                    <Link href="/profile#admin-coupons" className="font-bold decoration-lime decoration-4 underline-offset-4 hover:underline">🎟️ 쿠폰 추첨</Link>
+                  </>
                 )}
                 <ChatLink />
                 <InquiryLink />
