@@ -11,7 +11,7 @@ export default function TeacherCode() {
 
   if (profile?.kind !== "teacher")
     return (
-      <p className="mb-4 rounded-xl border border-line bg-white p-4 text-sm">
+      <p className="mb-4 card-sm p-4 text-sm">
         이 게시판의 글쓰기는 &lsquo;현장 보육교사&rsquo;로 가입하고 교사 인증 코드를 입력한 회원만 할 수 있어요. 읽기는 모든 회원이 가능해요.
       </p>
     );
@@ -25,7 +25,7 @@ export default function TeacherCode() {
   }
 
   return (
-    <form onSubmit={redeem} className="mb-4 rounded-xl border border-line bg-white p-4 text-sm">
+    <form onSubmit={redeem} className="mb-4 card-sm p-4 text-sm">
       <p className="mb-2 font-medium">교사 인증 코드를 입력하면 글을 쓸 수 있어요.</p>
       <div className="flex gap-2">
         <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="인증 코드"

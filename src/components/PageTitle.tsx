@@ -7,8 +7,8 @@ export default function PageTitle({
 }) {
   return (
     <div className="mb-8">
-      <h1 className="text-3xl font-bold">{title}</h1>
-      {desc && <p className="mt-2 text-foreground/70">{desc}</p>}
+      <h1 className="sticker text-4xl sm:text-5xl">{title}</h1>
+      {desc && <p className="mt-3 max-w-2xl text-foreground/80">{desc}</p>}
     </div>
   );
 }

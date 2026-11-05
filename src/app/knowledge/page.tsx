@@ -1,6 +1,6 @@
 import Link from "next/link";
 import PageTitle from "@/components/PageTitle";
-import { topics } from "@/lib/topics";
+import { subjects } from "@/lib/knowledge";
 
 export const metadata = { title: "아동보육 필수지식 | 보육시각" };
 
@@ -9,19 +9,20 @@ export default function Knowledge() {
     <div className="mx-auto max-w-5xl px-4 py-10">
       <PageTitle
         title="아동보육 필수지식"
-        desc="아동보육과 재학생과 현장 교사에게 필요한 지식을 주제별로 모았어요."
+        desc="과목을 고르면 단원 목록이 나오고, 단원을 누르면 자세한 내용이 열려요."
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {topics.map((t) => (
-          <Link key={t.slug} href={`/knowledge/${t.slug}`} className="rounded-2xl border border-line bg-white p-6 transition hover:shadow-md">
-            <div className="text-3xl">{t.emoji}</div>
-            <h2 className="mt-3 text-lg font-bold">{t.title}</h2>
-            <p className="mt-1 text-sm text-foreground/70">{t.summary}</p>
+        {subjects.map((s) => (
+          <Link key={s.slug} href={`/knowledge/${s.slug}`} className="card p-6">
+            <div className="text-3xl">{s.emoji}</div>
+            <h2 className="mt-3 text-lg font-bold">{s.title}</h2>
+            <p className="mt-1 text-sm text-foreground/70">{s.summary}</p>
+            <p className="mt-3 text-xs font-medium text-brand-dark">{s.units.length}개 단원 →</p>
           </Link>
         ))}
       </div>
-      <p className="mt-8 rounded-xl bg-soft p-4 text-sm">
-        ※ 학습을 돕는 일반적인 개요입니다. 시험이나 현장 적용 전에는 교재와 최신 법령, 기관 지침을 함께 확인해 주세요.
+      <p className="mt-8 note p-4 text-sm">
+        ※ 학습을 돕기 위한 정리 자료입니다. 각 과목 하단의 공식 기관 자료를 함께 확인하고, 법령과 제도는 최신 내용을 꼭 확인해 주세요.
       </p>
     </div>
   );

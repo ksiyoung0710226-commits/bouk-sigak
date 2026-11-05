@@ -10,7 +10,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   if (loading) return <p className="py-20 text-center text-foreground/60">불러오는 중…</p>;
   if (!session)
     return (
-      <div className="mx-auto max-w-md rounded-2xl border border-line bg-white p-8 text-center">
+      <div className="mx-auto max-w-md card p-8 text-center">
         <p className="text-lg font-bold">🔒 가입한 회원만 볼 수 있어요</p>
         <p className="mt-2 text-sm text-foreground/70">로그인하거나 가입하면 이 공간을 이용할 수 있습니다.</p>
         <div className="mt-5 flex justify-center gap-3">

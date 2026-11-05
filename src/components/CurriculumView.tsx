@@ -41,7 +41,7 @@ export default function CurriculumView({ groups }: { groups: AgeGroup[] }) {
       <section className="mt-6">
         <h2 className="text-2xl font-bold text-brand-dark">{area.name}</h2>
         {area.goal && (
-          <div className="mt-3 rounded-xl bg-soft p-4">
+          <div className="mt-3 note p-4">
             <p className="font-medium">목표: {area.goal}</p>
             {area.subGoals && (
               <ul className="mt-2 list-decimal space-y-0.5 pl-5 text-sm">
@@ -52,7 +52,7 @@ export default function CurriculumView({ groups }: { groups: AgeGroup[] }) {
         )}
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           {area.categories.map((c) => (
-            <div key={c.name} className="rounded-2xl border border-line bg-white p-5">
+            <div key={c.name} className="card p-5">
               <h3 className="font-bold">
                 <span className="mr-2 text-xs text-brand-dark">내용범주</span>
                 {c.name}

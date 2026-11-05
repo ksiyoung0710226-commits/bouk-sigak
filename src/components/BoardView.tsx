@@ -74,7 +74,7 @@ export default function BoardView({
 
   return (
     <div>
-      <p className="mb-4 rounded-xl bg-soft p-3 text-sm">
+      <p className="mb-4 note p-3 text-sm">
         🔒 가입한 회원에게만 보이는 공간이에요. <b>아동·학부모·기관의 실명이나 개인정보는 쓰지 말아 주세요.</b>
       </p>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -93,7 +93,7 @@ export default function BoardView({
       {!canWrite && writeHint}
 
       {writing && (
-        <form onSubmit={submit} className="mb-6 space-y-3 rounded-2xl border border-line bg-white p-5">
+        <form onSubmit={submit} className="mb-6 space-y-3 card p-5">
           <select className={input} value={category} onChange={(e) => setCategory(e.target.value)}>
             {categories.map((c) => <option key={c}>{c}</option>)}
           </select>
@@ -105,9 +105,9 @@ export default function BoardView({
       )}
 
       {!loaded ? <p className="text-foreground/60">불러오는 중…</p> : shown.length === 0 ? (
-        <p className="rounded-2xl border border-line bg-white p-8 text-center text-foreground/60">아직 글이 없어요. 첫 글을 남겨 보세요!</p>
+        <p className="card p-8 text-center text-foreground/60">아직 글이 없어요. 첫 글을 남겨 보세요!</p>
       ) : (
-        <ul className="divide-y divide-line rounded-2xl border border-line bg-white">
+        <ul className="divide-y divide-line card">
           {shown.map((p) => (
             <li key={p.id} className="p-4">
               <button className="w-full text-left" onClick={() => setOpen(open === p.id ? null : p.id)}>
@@ -167,7 +167,7 @@ function Comments({ postId, onReport }: { postId: number; onReport: (id: number)
       <p className="mb-2 text-sm font-bold">댓글 {items.length}</p>
       <ul className="space-y-2">
         {items.map((c) => (
-          <li key={c.id} className="rounded-lg bg-soft p-3 text-sm">
+          <li key={c.id} className="note p-3 text-sm">
             <p className="text-xs text-foreground/60">{c.profiles?.nickname ?? "탈퇴한 회원"} · {kindLabel(c.profiles?.kind)} · {when(c.created_at)}</p>
             <p className="whitespace-pre-wrap">{c.body}</p>
             <div className="mt-1 flex gap-3 text-xs">

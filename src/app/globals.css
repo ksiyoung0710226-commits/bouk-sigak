@@ -1,27 +1,142 @@
 @import "tailwindcss";
 
+/* Cute Retro Editorial + Professional Education
+   버터 옐로우 배경 / 차콜 본문 / 라벤더 카드 포인트 / 라임 형광펜 */
 :root {
-  --background: #fffaf3;
-  --foreground: #3a2f2a;
-  --brand: #e8825a;
-  --brand-dark: #c4623b;
-  --soft: #fdeede;
-  --line: #f0dcc6;
+  --butter: #fff1b0;
+  --sun: #ffdf5e;
+  --ink: #29251f;
+  --lav: #c9b9e8;
+  --lav-soft: #efe9fa;
+  --lime: #d8ec77;
+  --deep-lav: #5a3fa0;
+
+  --background: var(--butter);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-brand: var(--brand);
-  --color-brand-dark: var(--brand-dark);
-  --color-soft: var(--soft);
-  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-sun: var(--sun);
+  --color-lav: var(--lav);
+  --color-lime: var(--lime);
+  /* 기존 클래스 이름을 유지하면서 새 팔레트로 연결 */
+  --color-brand: var(--ink);
+  --color-brand-dark: var(--deep-lav);
+  --color-soft: var(--lav-soft);
+  --color-line: rgb(41 37 31 / 0.2);
   --font-sans: var(--font-noto), system-ui, sans-serif;
+  --font-display: var(--font-black-han), var(--font-noto), sans-serif;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-noto), system-ui, sans-serif;
-  line-height: 1.7;
+  line-height: 1.75;
+  /* 은은한 도트 패턴으로 레트로 인쇄물 느낌 */
+  background-image: radial-gradient(rgb(41 37 31 / 0.07) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* 제목: 개성 있고 굵게 */
+h1, h2, h3, .font-display {
+  font-family: var(--font-black-han), var(--font-noto), sans-serif;
+  font-synthesis: none;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--lime);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--deep-lav);
+  outline-offset: 2px;
+}
+
+/* 스티커 타이포: 버터 옐로우 + 검정 외곽선 */
+.sticker {
+  font-family: var(--font-black-han), var(--font-noto), sans-serif;
+  font-synthesis: none;
+  color: var(--sun);
+  -webkit-text-stroke: 0.11em #000;
+  paint-order: stroke fill;
+  text-shadow: 0.07em 0.08em 0 #000;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+}
+
+/* 라임 형광펜 */
+.hl {
+  background: linear-gradient(transparent 52%, var(--lime) 52%, var(--lime) 92%, transparent 92%);
+  padding: 0 0.15em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* 키워드 칩 */
+.kw {
+  display: inline-block;
+  background: var(--lime);
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  padding: 0.1rem 0.8rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.kw-sm {
+  display: inline-block;
+  background: rgb(216 236 119 / 0.7);
+  border-radius: 999px;
+  padding: 0 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* 둥근 카드 + 라벤더 하드 섀도 */
+.card {
+  background: #fffdf6;
+  border: 1.5px solid var(--ink);
+  border-radius: 1.4rem;
+  box-shadow: 4px 4px 0 var(--lav);
+}
+.card-sm {
+  background: #fffdf6;
+  border: 1.5px solid var(--ink);
+  border-radius: 1rem;
+  box-shadow: 3px 3px 0 var(--lav);
+}
+a.card, a.card-sm, button.card-sm {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+a.card:hover, a.card-sm:hover, button.card-sm:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--lav);
+}
+
+/* 라벤더 구분 영역 */
+.panel-lav {
+  background: var(--lav);
+  border: 1.5px solid var(--ink);
+  border-radius: 1.4rem;
+}
+
+/* 핵심 문장 박스: 라임 형광펜 느낌 */
+.note {
+  background: rgb(216 236 119 / 0.5);
+  border-left: 5px solid var(--ink);
+  border-radius: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.card, a.card-sm, button.card-sm { transition: none; }
+  a.card:hover, a.card-sm:hover, button.card-sm:hover { transform: none; }
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_KR } from "next/font/google";
+import { Noto_Sans_KR, Black_Han_Sans } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -11,6 +11,12 @@ const noto = Noto_Sans_KR({
   weight: ["400", "500", "700"],
 });
 
+const blackHan = Black_Han_Sans({
+  variable: "--font-black-han",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 export const metadata: Metadata = {
   title: "보육시각 | 아동보육 학생과 교사를 위한 공간",
   description:
@@ -19,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={`${noto.variable} h-full antialiased`}>
+    <html lang="ko" className={`${noto.variable} ${blackHan.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <AuthProvider>
           <Header />

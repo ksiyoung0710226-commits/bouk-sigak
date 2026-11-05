@@ -13,12 +13,15 @@ export const NAV = [
 export default function Header() {
   const { session, profile, signOut, loading } = useAuth();
   return (
-    <header className="sticky top-0 z-10 border-b border-line bg-background/90 backdrop-blur">
+    <header className="sticky top-0 z-10 border-b-2 border-ink bg-background/95 backdrop-blur">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-        <Link href="/" className="text-xl font-bold text-brand-dark">🌱 보육시각</Link>
+        <Link href="/" className="flex items-center gap-1.5" aria-label="보육시각 홈">
+          <span aria-hidden className="text-xl">🌱</span>
+          <span className="sticker text-3xl">보육시각</span>
+        </Link>
         <nav className="flex flex-wrap items-center gap-4 text-sm font-medium">
           {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className="hover:text-brand-dark">{n.label}</Link>
+            <Link key={n.href} href={n.href} className="font-bold decoration-lime decoration-4 underline-offset-4 hover:underline">{n.label}</Link>
           ))}
           {!loading &&
             (session ? (
