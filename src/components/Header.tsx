@@ -30,6 +30,9 @@ export default function Header() {
                   👤 {profile?.nickname ?? "회원"}
                   {profile?.is_admin ? " (관리자)" : ""}
                 </Link>
+                {profile?.is_admin && (
+                  <Link href="/admin/members" className="font-bold decoration-lime decoration-4 underline-offset-4 hover:underline">🛠 회원 관리</Link>
+                )}
                 <button onClick={signOut} className="rounded-full border border-line px-3 py-1 hover:bg-soft">로그아웃</button>
               </>
             ) : (
