@@ -75,7 +75,6 @@ function DetailsSection() {
   const [school, setSchool] = useState("");
   const [major, setMajor] = useState("");
   const [studentNo, setStudentNo] = useState("");
-  const [centerName, setCenterName] = useState("");
   const [region, setRegion] = useState("");
   const [centerType, setCenterType] = useState("");
   const [isPublic, setIsPublic] = useState(true);
@@ -97,8 +96,8 @@ function DetailsSection() {
         setIsPublic(data?.is_public ?? true);
         setLoaded(true);
       });
-    supabase.from("profile_private").select("student_no,center_name").eq("user_id", profile.id).maybeSingle()
-      .then(({ data }) => { if (!alive) return; setStudentNo(data?.student_no ?? ""); setCenterName(data?.center_name ?? ""); });
+    supabase.from("profile_private").select("student_no").eq("user_id", profile.id).maybeSingle()
+      .then(({ data }) => { if (!alive) return; setStudentNo(data?.student_no ?? ""); });
     return () => { alive = false; };
   }, [profile]);
 
@@ -108,7 +107,6 @@ function DetailsSection() {
     setMsg(null);
     if (!teacher && (!school.trim() || !major.trim())) return setMsg({ ok: false, text: "재학 중인 학교와 학과를 골라 주세요." });
     if (teacher && (!region || !centerType)) return setMsg({ ok: false, text: "근무 지역과 어린이집 유형을 골라 주세요." });
-    if (teacher && centerName.trim().length < 2) return setMsg({ ok: false, text: "근무하는 어린이집 이름을 적어 주세요." });
     if (!teacher && studentNo.trim() && !STUDENT_NO_RE.test(studentNo.trim())) return setMsg({ ok: false, text: "학번은 숫자·영문 4~20자로 적어 주세요." });
     setBusy(true);
     const row = teacher
@@ -120,9 +118,7 @@ function DetailsSection() {
       : await supabase.from("profile_details").insert({ user_id: profile.id, ...row });
     let error2 = null;
     {
-      const priv_row = teacher
-        ? { student_no: null, center_name: centerName.trim() }
-        : { student_no: studentNo.trim() || null, center_name: null };
+      const priv_row = { student_no: teacher ? null : studentNo.trim() || null };
       const { data: priv } = await supabase.from("profile_private").select("user_id").eq("user_id", profile.id).maybeSingle();
       ({ error: error2 } = priv
         ? await supabase.from("profile_private").update({ ...priv_row, updated_at: new Date().toISOString() }).eq("user_id", profile.id)
@@ -138,8 +134,8 @@ function DetailsSection() {
     <form onSubmit={save} className="card space-y-3 p-6">
       <h2 className="text-xl">{teacher ? "근무 정보" : "학교 정보"}</h2>
       {teacher ? (
-        <CenterPicker region={region} centerType={centerType} centerName={centerName}
-          onChange={(v) => { setRegion(v.region); setCenterType(v.centerType); setCenterName(v.centerName); }} />
+        <CenterPicker region={region} centerType={centerType}
+          onChange={(v) => { setRegion(v.region); setCenterType(v.centerType); }} />
       ) : (
         <div className="text-sm">
           <span className="mb-1 block font-medium">재학 중인 학교와 학과</span>

@@ -21,7 +21,6 @@ export default function SignupForm() {
   const [studentNo, setStudentNo] = useState("");
   const [region, setRegion] = useState("");
   const [centerType, setCenterType] = useState("");
-  const [centerName, setCenterName] = useState("");
   const [infoPublic, setInfoPublic] = useState(true);
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -38,7 +37,6 @@ export default function SignupForm() {
     if (kind === "student" && (!school.trim() || !major.trim())) return setError("재학 중인 학교와 학과를 골라 주세요.");
     if (kind === "student" && studentNo.trim() && !STUDENT_NO_RE.test(studentNo.trim())) return setError("학번은 숫자·영문 4~20자로 적어 주세요.");
     if (kind === "teacher" && (!region || !centerType)) return setError("근무 지역과 어린이집 유형을 골라 주세요.");
-    if (kind === "teacher" && centerName.trim().length < 2) return setError("근무하는 어린이집 이름을 적어 주세요.");
     setBusy(true);
     const { data: free } = await supabase.rpc("nickname_available", { nick });
     if (free === false) {
@@ -51,7 +49,7 @@ export default function SignupForm() {
       options: {
         data: kind === "student"
           ? { nickname: nick, kind, school: school.trim(), major: major.trim(), student_no: studentNo.trim(), info_public: infoPublic }
-          : { nickname: nick, kind, region, center_type: centerType, center_name: centerName.trim(), info_public: infoPublic },
+          : { nickname: nick, kind, region, center_type: centerType, info_public: infoPublic },
         emailRedirectTo: `${window.location.origin}/login`,
       },
     });
@@ -111,8 +109,8 @@ export default function SignupForm() {
             </label>
           </div>
         ) : (
-          <CenterPicker region={region} centerType={centerType} centerName={centerName}
-            onChange={(v) => { setRegion(v.region); setCenterType(v.centerType); setCenterName(v.centerName); }} />
+          <CenterPicker region={region} centerType={centerType}
+            onChange={(v) => { setRegion(v.region); setCenterType(v.centerType); }} />
         )}
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" checked={infoPublic} onChange={(e) => setInfoPublic(e.target.checked)} className="mt-1" />
@@ -143,7 +141,7 @@ export default function SignupForm() {
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-1" required />
         <span>
-          [필수] 이메일, 닉네임, 가입 유형, {kind === "student" ? "재학 중인 학교·학과(학번은 입력한 경우)" : "근무 지역, 어린이집 유형과 이름"}을 서비스 운영 목적으로 수집하는 것에 동의하며, 게시글에
+          [필수] 이메일, 닉네임, 가입 유형, {kind === "student" ? "재학 중인 학교·학과(학번은 입력한 경우)" : "근무 지역과 어린이집 분류"}을 서비스 운영 목적으로 수집하는 것에 동의하며, 게시글에
           <b> 아동·기관·학부모의 실명이나 개인정보를 쓰지 않겠습니다.</b>
         </span>
       </label>
