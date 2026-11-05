@@ -1,26 +1,20 @@
 import PageTitle from "@/components/PageTitle";
-import { curriculumAreas } from "@/lib/content";
+import CurriculumView from "@/components/CurriculumView";
+import { ageGroups } from "@/lib/curriculum";
 
 export const metadata = { title: "보육과정 | 보육시각" };
 
 export default function Curriculum() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <PageTitle title="보육과정" desc="연령별 보육과정의 영역을 정리했어요. 주기마다 최신 내용으로 업데이트할 예정입니다." />
-      <div className="grid gap-6 md:grid-cols-2">
-        {Object.entries(curriculumAreas).map(([age, areas]) => (
-          <section key={age} className="rounded-2xl border border-line bg-white p-6">
-            <h2 className="text-xl font-bold text-brand-dark">{age}</h2>
-            <ul className="mt-4 flex flex-wrap gap-2">
-              {areas.map((a) => (
-                <li key={a} className="rounded-full bg-soft px-3 py-1 text-sm">{a}</li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
-      <p className="mt-8 rounded-xl bg-soft p-4 text-sm">
-        ※ 상세 내용(연령별 목표, 월별 주제 등)은 공식 보육과정 자료를 확인한 뒤 추가할 예정입니다.
+      <PageTitle
+        title="보육과정"
+        desc="2024 개정 표준보육과정(0~2세)과 2019 개정 누리과정(3~5세)의 영역별 내용범주와 내용입니다."
+      />
+      <CurriculumView groups={ageGroups} />
+      <p className="mt-10 rounded-xl bg-soft p-4 text-sm">
+        ※ 내용범주와 내용은 교육부 고시문 원문을 옮긴 것입니다. 일부 영역(0~2세 신체운동·건강, 의사소통)의
+        목표 문구는 원문 확인 후 추가할 예정입니다. 정확한 사용 전에는 반드시 공식 고시문과 해설서를 확인해 주세요.
       </p>
     </div>
   );

@@ -6,6 +6,7 @@ export const NAV = [
   { href: "/knowledge", label: "보육지식" },
   { href: "/community", label: "커뮤니티" },
   { href: "/tips", label: "교사 노하우" },
+  { href: "/signup", label: "회원가입" },
 ];
 
 export default function Header() {
