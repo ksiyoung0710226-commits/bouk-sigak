@@ -26,10 +26,10 @@ export default function Header() {
           {!loading &&
             (session ? (
               <>
-                <span className="text-foreground/60">
-                  {profile?.nickname ?? "회원"}
+                <Link href="/profile" className="font-bold decoration-lime decoration-4 underline-offset-4 hover:underline" title="내 정보 수정">
+                  👤 {profile?.nickname ?? "회원"}
                   {profile?.is_admin ? " (관리자)" : ""}
-                </span>
+                </Link>
                 <button onClick={signOut} className="rounded-full border border-line px-3 py-1 hover:bg-soft">로그아웃</button>
               </>
             ) : (

@@ -33,8 +33,16 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 로고 "보육시각": **차콜색 + 둥근 글꼴 Jua** (`.logo-font`). **글자에 검정 외곽선 금지, 흰 글씨 라벨 금지**(사용자가 싫어함). 다른 제목은 Noto Sans KR 굵게(`.sticker` = 외곽선 없는 차콜).
 - 변경 후엔 반드시 배포하고 라이브에서 확인한 뒤 알릴 것(사용자가 배포 전 화면을 보고 혼란스러워한 적 있음).
 
+## 회원 기능 (완료)
+- 관리자: ksiyoung0710226@gmail.com (닉네임 '아보과 병아리') 지정 완료. 추가 지정: `update public.profiles set is_admin = true where id = (select id from auth.users where email = '...');`
+- `/profile`: 닉네임 변경, 이메일 변경(기존·새 메일 양쪽 확인), 비밀번호 변경(현재 비밀번호 확인 후), 회원 탈퇴(모든 정보 삭제 경고 + '탈퇴합니다' 입력).
+- 닉네임 규칙은 DB가 강제(003_nickname_rules.sql): 대소문자·띄어쓰기 무시 중복 금지, 한글/영문/숫자 1자 이상 필수(특수문자만 불가). 화면 검증은 `src/lib/nickname.ts` — 둘을 같이 바꿀 것.
+- 탈퇴: `delete_my_account()`(004) → auth.users 삭제 → profiles/posts/comments/reports cascade 삭제. 내 글에 달린 남의 댓글도 함께 지워짐(사용자에게 안내함).
+- 로그인: '이메일 저장'(localStorage), '자동 로그인'(켜면 localStorage, 끄면 sessionStorage에 세션 저장, `src/lib/supabase.ts`). 비밀번호는 사이트가 저장하지 않고 브라우저 비밀번호 저장 기능(autocomplete 속성)에 맡김.
+- 신고 버튼은 글·댓글 모두 닉네임 바로 옆(`AuthorLine` in BoardView). 내 글에는 신고 버튼 없음.
+
 ## 남은 할 일
-1. 사용자 계정 관리자 지정: 사용자가 https://boyuk-insight.vercel.app/signup 에서 가입 후 → `update public.profiles set is_admin = true where id = (select id from auth.users where email = '사용자이메일');`
+1. 관리자용 신고 목록 화면(신고는 reports 표에 저장되지만 아직 볼 화면이 없음).
 2. 인증 메일: 무료 기본 메일은 제목·발신자명 변경 불가, 시간당 한도 작음 → 여러 명 공유 전에 커스텀 SMTP(Resend 등) 연결 또는 인증 끄기 결정.
 3. 개인정보 처리방침·이용약관 초안 작성(수집: 이메일, 닉네임, 가입 유형만. 서류는 받지 않음).
 4. 교사 초대코드 변경은 DB `app_secrets` 표(key='teacher_code') 업데이트. 코드는 사용자에게 따로 전달했음.

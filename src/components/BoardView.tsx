@@ -110,20 +110,20 @@ export default function BoardView({
         <ul className="divide-y divide-line card">
           {shown.map((p) => (
             <li key={p.id} className="p-4">
-              <button className="w-full text-left" onClick={() => setOpen(open === p.id ? null : p.id)}>
+              <button className="w-full text-left" onClick={() => setOpen(open === p.id ? null : p.id)} aria-expanded={open === p.id}>
                 <span className="text-xs text-brand-dark">[{p.category}]</span>
                 <p className="font-medium">{p.title}</p>
-                <p className="text-xs text-foreground/60">{p.profiles?.nickname ?? "탈퇴한 회원"} · {kindLabel(p.profiles?.kind)} · {when(p.created_at)}</p>
               </button>
+              <AuthorLine nickname={p.profiles?.nickname} kind={p.profiles?.kind} createdAt={p.created_at}
+                onReport={p.author_id === session?.user.id ? undefined : () => report("post_id", p.id)} />
               {open === p.id && (
                 <div className="mt-3 border-t border-line pt-3">
                   <p className="whitespace-pre-wrap text-sm">{p.body}</p>
-                  <div className="mt-3 flex gap-3 text-xs">
-                    <button onClick={() => report("post_id", p.id)} className="text-foreground/60 underline">신고</button>
-                    {(p.author_id === session?.user.id || profile?.is_admin) && (
+                  {(p.author_id === session?.user.id || profile?.is_admin) && (
+                    <div className="mt-3 flex gap-3 text-xs">
                       <button onClick={() => remove(p.id)} className="text-red-700 underline">삭제</button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   <Comments postId={p.id} onReport={(id) => report("comment_id", id)} />
                 </div>
               )}
@@ -168,14 +168,14 @@ function Comments({ postId, onReport }: { postId: number; onReport: (id: number)
       <ul className="space-y-2">
         {items.map((c) => (
           <li key={c.id} className="note p-3 text-sm">
-            <p className="text-xs text-foreground/60">{c.profiles?.nickname ?? "탈퇴한 회원"} · {kindLabel(c.profiles?.kind)} · {when(c.created_at)}</p>
+            <AuthorLine nickname={c.profiles?.nickname} kind={c.profiles?.kind} createdAt={c.created_at}
+              onReport={c.author_id === session?.user.id ? undefined : () => onReport(c.id)} />
             <p className="whitespace-pre-wrap">{c.body}</p>
-            <div className="mt-1 flex gap-3 text-xs">
-              <button onClick={() => onReport(c.id)} className="text-foreground/60 underline">신고</button>
-              {(c.author_id === session?.user.id || profile?.is_admin) && (
+            {(c.author_id === session?.user.id || profile?.is_admin) && (
+              <div className="mt-1 flex gap-3 text-xs">
                 <button onClick={() => del(c.id)} className="text-red-700 underline">삭제</button>
-              )}
-            </div>
+              </div>
+            )}
           </li>
         ))}
       </ul>
@@ -184,5 +184,22 @@ function Comments({ postId, onReport }: { postId: number; onReport: (id: number)
         <button className="shrink-0 rounded-full bg-brand px-4 text-sm font-medium text-white">등록</button>
       </form>
     </div>
+  );
+}
+
+// 작성자 줄: 닉네임 바로 옆에 신고 버튼 (내 글·댓글에는 신고 버튼을 숨김)
+function AuthorLine({
+  nickname, kind, createdAt, onReport,
+}: { nickname?: string; kind?: string; createdAt: string; onReport?: () => void }) {
+  return (
+    <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-foreground/60">
+      <span className="font-bold text-foreground/80">{nickname ?? "탈퇴한 회원"}</span>
+      {onReport && (
+        <button onClick={onReport} className="rounded-full border border-line px-2 leading-5 hover:bg-red-50 hover:text-red-700" aria-label={`${nickname ?? "작성자"}의 게시물 신고`}>
+          🚩 신고
+        </button>
+      )}
+      <span>· {kindLabel(kind)} · {when(createdAt)}</span>
+    </p>
   );
 }

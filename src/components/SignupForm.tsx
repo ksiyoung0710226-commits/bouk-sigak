@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { validateNickname } from "@/lib/nickname";
 
 type Kind = "student" | "teacher";
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
@@ -21,9 +22,15 @@ export default function SignupForm() {
     e.preventDefault();
     setError("");
     const nick = nickname.trim();
-    if (nick.length < 2 || nick.length > 20) return setError("닉네임은 2~20자로 입력해 주세요.");
+    const nickErr = validateNickname(nick);
+    if (nickErr) return setError(nickErr);
     if (password.length < 8) return setError("비밀번호는 8자 이상이어야 해요.");
     setBusy(true);
+    const { data: free } = await supabase.rpc("nickname_available", { nick });
+    if (free === false) {
+      setBusy(false);
+      return setError("이미 사용 중인 닉네임이에요. 다른 닉네임을 써 주세요.");
+    }
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -33,7 +40,11 @@ export default function SignupForm() {
       },
     });
     setBusy(false);
-    if (error) return setError(error.message.includes("registered") ? "이미 가입된 이메일이에요." : "가입에 실패했어요: " + error.message);
+    if (error) {
+      if (error.message.includes("registered")) return setError("이미 가입된 이메일이에요.");
+      if (/database error/i.test(error.message)) return setError("닉네임이 이미 쓰이고 있거나 규칙에 맞지 않아요. 다른 닉네임으로 시도해 주세요.");
+      return setError("가입에 실패했어요: " + error.message);
+    }
     // 이메일 인증이 꺼져 있으면 바로 로그인된 세션이 생깁니다.
     if (data.session) window.location.href = kind === "teacher" ? "/tips" : "/community";
     else setDone(true);
@@ -74,15 +85,16 @@ export default function SignupForm() {
 
       <label className="block">
         <span className="mb-1 block text-sm font-medium">닉네임</span>
-        <input className={input} value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="실명 대신 닉네임을 써 주세요" required />
+        <input className={input} value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="실명 대신 닉네임을 써 주세요" maxLength={20} required />
+        <span className="mt-1 block text-xs text-foreground/60">2~20자, 다른 회원과 같은 닉네임은 쓸 수 없어요. 특수문자만으로는 만들 수 없어요.</span>
       </label>
       <label className="block">
         <span className="mb-1 block text-sm font-medium">이메일</span>
-        <input type="email" className={input} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@email.com" required />
+        <input type="email" name="email" autoComplete="username" className={input} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@email.com" required />
       </label>
       <label className="block">
         <span className="mb-1 block text-sm font-medium">비밀번호</span>
-        <input type="password" className={input} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="8자 이상" required />
+        <input type="password" name="new-password" autoComplete="new-password" className={input} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="8자 이상" required />
       </label>
 
       <label className="flex items-start gap-2 text-sm">
