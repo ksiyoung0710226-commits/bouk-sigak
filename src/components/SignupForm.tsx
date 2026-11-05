@@ -1,103 +1,99 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
-type Role = "student" | "teacher";
-
+type Kind = "student" | "teacher";
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
 
 export default function SignupForm() {
-  const [role, setRole] = useState<Role>("student");
-  const [consent, setConsent] = useState(false);
+  const [kind, setKind] = useState<Kind>("student");
+  const [nickname, setNickname] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [agree, setAgree] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    const nick = nickname.trim();
+    if (nick.length < 2 || nick.length > 20) return setError("닉네임은 2~20자로 입력해 주세요.");
+    if (password.length < 8) return setError("비밀번호는 8자 이상이어야 해요.");
+    setBusy(true);
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: { nickname: nick, kind },
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
+    });
+    setBusy(false);
+    if (error) return setError(error.message.includes("registered") ? "이미 가입된 이메일이에요." : "가입에 실패했어요: " + error.message);
+    // 이메일 인증이 꺼져 있으면 바로 로그인된 세션이 생깁니다.
+    if (data.session) window.location.href = kind === "teacher" ? "/tips" : "/community";
+    else setDone(true);
+  }
+
+  if (done)
+    return (
+      <div className="rounded-2xl border border-line bg-white p-8 text-center">
+        <p className="text-lg font-bold">📧 인증 메일을 보냈어요</p>
+        <p className="mt-2 text-sm text-foreground/70">
+          {email} 의 메일함(스팸함 포함)에서 인증 링크를 누른 뒤 로그인해 주세요.
+        </p>
+        <Link href="/login" className="mt-5 inline-block rounded-full bg-brand px-6 py-2 font-medium text-white">로그인하러 가기</Link>
+      </div>
+    );
 
   return (
-    <form onSubmit={(e) => e.preventDefault()} className="space-y-5">
+    <form onSubmit={submit} className="space-y-5">
       <div>
         <p className="mb-2 font-medium">가입 유형</p>
         <div className="grid grid-cols-2 gap-3">
-          {(
-            [
-              ["student", "🎓 아동보육과 재학생"],
-              ["teacher", "🧸 현장 보육교사"],
-            ] as const
-          ).map(([v, label]) => (
-            <button
-              type="button"
-              key={v}
-              onClick={() => setRole(v)}
-              className={`rounded-xl border px-4 py-3 font-medium ${role === v ? "border-brand bg-soft text-brand-dark" : "border-line bg-white"}`}
-            >
+          {([["student", "🎓 아동보육과 재학생"], ["teacher", "🧸 현장 보육교사"]] as const).map(([v, label]) => (
+            <button type="button" key={v} onClick={() => setKind(v)}
+              className={`rounded-xl border px-4 py-3 font-medium ${kind === v ? "border-brand bg-soft text-brand-dark" : "border-line bg-white"}`}>
               {label}
             </button>
           ))}
         </div>
+        <p className="mt-2 text-xs text-foreground/60">
+          유형은 본인이 선택하는 표시이며, 별도의 서류 인증은 하지 않아요.
+          {kind === "teacher" && " 교사 노하우 게시판에 글을 쓰려면 가입 후 교사 인증 코드가 필요해요."}
+        </p>
       </div>
 
       <label className="block">
         <span className="mb-1 block text-sm font-medium">닉네임</span>
-        <input className={input} placeholder="커뮤니티에서 보여질 이름" />
+        <input className={input} value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="실명 대신 닉네임을 써 주세요" required />
       </label>
       <label className="block">
         <span className="mb-1 block text-sm font-medium">이메일</span>
-        <input type="email" className={input} placeholder="example@email.com" />
+        <input type="email" className={input} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@email.com" required />
       </label>
       <label className="block">
         <span className="mb-1 block text-sm font-medium">비밀번호</span>
-        <input type="password" className={input} placeholder="8자 이상" />
+        <input type="password" className={input} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="8자 이상" required />
       </label>
 
-      {role === "student" ? (
-        <section className="space-y-3 rounded-2xl border border-line bg-white p-5">
-          <h2 className="font-bold">재학 인증</h2>
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium">학교명 · 학과</span>
-            <input className={input} placeholder="예: ○○대학교 아동보육과" />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium">학생증 뒷면 사진</span>
-            <input type="file" accept="image/*" className="block w-full text-sm" />
-          </label>
-          <p className="rounded-lg bg-soft p-3 text-xs">
-            학과 확인에 필요한 부분(학교명, 학과, 유효기간)만 보이게 찍어 주세요. 학번, 바코드,
-            주민등록번호 등은 가리고 올려 주세요.
-          </p>
-        </section>
-      ) : (
-        <section className="space-y-3 rounded-2xl border border-line bg-white p-5">
-          <h2 className="font-bold">교사 인증</h2>
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium">근무 기관 유형 (선택)</span>
-            <input className={input} placeholder="예: 국공립 어린이집" />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium">보육교사 자격증 또는 보육과정 이수 증빙</span>
-            <input type="file" accept="image/*,application/pdf" className="block w-full text-sm" />
-          </label>
-          <p className="rounded-lg bg-soft p-3 text-xs">
-            자격 확인에 필요한 정보(성명, 자격 등급, 발급 기관)만 보이게 올려 주세요. 주민등록번호
-            뒷자리, 주소 등은 가려 주세요.
-          </p>
-        </section>
-      )}
-
       <label className="flex items-start gap-2 text-sm">
-        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1" />
+        <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-1" required />
         <span>
-          [필수] 자격 확인을 위해 올린 서류를 수집·이용하는 것에 동의합니다. 서류는 확인 목적으로만 쓰이고,
-          승인 또는 반려 후 삭제됩니다.
+          [필수] 이메일, 닉네임, 가입 유형을 서비스 운영 목적으로 수집하는 것에 동의하며, 게시글에
+          <b> 아동·기관·학부모의 실명이나 개인정보를 쓰지 않겠습니다.</b>
         </span>
       </label>
 
-      <button
-        type="submit"
-        disabled
-        className="w-full cursor-not-allowed rounded-full bg-foreground/20 px-6 py-3 font-medium text-foreground/60"
-      >
-        가입 기능 준비 중
+      {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      <button disabled={busy || !agree} className="w-full rounded-full bg-brand px-6 py-3 font-medium text-white hover:bg-brand-dark disabled:opacity-50">
+        {busy ? "가입 중…" : "가입하기"}
       </button>
-      <p className="text-center text-xs text-foreground/60">
-        회원가입 기능은 곧 열릴 예정입니다. 지금 입력한 내용은 저장되거나 전송되지 않습니다.
-      </p>
+      <p className="text-center text-sm">이미 계정이 있나요? <Link href="/login" className="text-brand-dark underline">로그인</Link></p>
     </form>
   );
 }
