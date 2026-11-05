@@ -138,3 +138,13 @@ a.card:hover, a.card-sm:hover, button.card-sm:hover {
   a.card:hover, a.card-sm:hover, button.card-sm:hover { transform: none; }
 }
 
+
+/* 로고 전용: 둥글고 부드러운 글꼴, 색은 차콜 */
+.logo-font {
+  font-family: var(--font-jua), var(--font-noto), system-ui, sans-serif;
+  font-weight: 400;
+  font-synthesis: none;
+  color: var(--ink);
+  letter-spacing: 0;
+  line-height: 1.25;
+}

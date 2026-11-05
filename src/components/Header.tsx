@@ -17,7 +17,7 @@ export default function Header() {
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3">
         <Link href="/" className="flex items-center gap-1.5" aria-label="보육시각 홈">
           <span aria-hidden className="text-xl">🌱</span>
-          <span className="sticker text-3xl">보육시각</span>
+          <span className="logo-font text-3xl">보육시각</span>
         </Link>
         <nav className="flex flex-wrap items-center gap-4 text-sm font-medium">
           {NAV.map((n) => (
