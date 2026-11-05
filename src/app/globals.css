@@ -28,7 +28,7 @@
   --color-soft: var(--lav-soft);
   --color-line: rgb(41 37 31 / 0.2);
   --font-sans: var(--font-noto), system-ui, sans-serif;
-  --font-display: var(--font-black-han), var(--font-noto), sans-serif;
+  --font-display: var(--font-noto), system-ui, sans-serif;
 }
 
 html {
@@ -47,9 +47,9 @@ body {
 
 /* 제목: 개성 있고 굵게 */
 h1, h2, h3, .font-display {
-  font-family: var(--font-black-han), var(--font-noto), sans-serif;
-  font-synthesis: none;
-  letter-spacing: -0.01em;
+  font-family: var(--font-noto), system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 ::selection {
@@ -62,15 +62,12 @@ h1, h2, h3, .font-display {
   outline-offset: 2px;
 }
 
-/* 스티커 타이포: 버터 옐로우 + 검정 외곽선 */
+/* 로고·주요 제목: 외곽선 없이 굵은 차콜 */
 .sticker {
-  font-family: var(--font-black-han), var(--font-noto), sans-serif;
-  font-synthesis: none;
-  color: var(--sun);
-  -webkit-text-stroke: 0.11em #000;
-  paint-order: stroke fill;
-  text-shadow: 0.07em 0.08em 0 #000;
-  letter-spacing: 0.01em;
+  font-family: var(--font-noto), system-ui, sans-serif;
+  font-weight: 900;
+  color: var(--ink);
+  letter-spacing: -0.03em;
   line-height: 1.25;
 }
 
