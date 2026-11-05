@@ -20,6 +20,7 @@ type Member = {
   major: string | null;
   school_verified: boolean;
   student_no: string | null;
+  center_name: string | null;
   region: string | null;
   center_type: string | null;
   info_public: boolean;
@@ -97,7 +98,7 @@ export default function AdminMembers() {
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!members) return [];
-    return s ? members.filter((m) => m.nickname.toLowerCase().includes(s) || m.email.toLowerCase().includes(s) || detailsLabel(m.kind, m).toLowerCase().includes(s) || (m.student_no ?? "").toLowerCase().includes(s)) : members;
+    return s ? members.filter((m) => m.nickname.toLowerCase().includes(s) || m.email.toLowerCase().includes(s) || detailsLabel(m.kind, m).toLowerCase().includes(s) || (m.student_no ?? "").toLowerCase().includes(s) || (m.center_name ?? "").toLowerCase().includes(s)) : members;
   }, [members, q]);
 
   if (loading || !profile?.is_admin) return null;
@@ -120,45 +121,58 @@ export default function AdminMembers() {
       </div>
       <input
         className="w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand"
-        placeholder="닉네임, 이메일, 학교, 학번, 지역으로 찾기"
+        placeholder="닉네임, 이메일, 학교, 학번, 지역, 어린이집 이름으로 찾기 (두 칸 모두에서 찾아요)"
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
-      <ul className="space-y-3">
-        {shown.map((m) => (
-          <li key={m.id} className="card p-4">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <p className="font-bold">
-                  {m.nickname}
-                  {m.is_admin && <span className="kw ml-2 text-xs">관리자</span>}
-                  {m.id === profile.id && <span className="ml-2 text-xs text-foreground/60">(나)</span>}
-                </p>
-                <p className="text-sm text-foreground/75">{m.email}</p>
-                {detailsLabel(m.kind, m) && (
-                  <p className="text-sm">
-                    {m.kind === "teacher" ? "🏫 " : "🎓 "}{detailsLabel(m.kind, m)}
-                    <span className="ml-1 text-xs text-foreground/60">({m.info_public ? "공개" : "비공개"})</span>
-                  </p>
+      <div className="grid gap-4 md:grid-cols-2">
+        {([["student", "🎓 재학생"], ["teacher", "🧸 현장교사"]] as const).map(([k, label]) => {
+          const list = shown.filter((m) => (m.kind === "teacher" ? "teacher" : "student") === k);
+          return (
+            <div key={k} className="rounded-2xl border-2 border-ink bg-background/60 p-3">
+              <h3 className="mb-3 text-lg font-bold">
+                {label} <span className="text-sm font-normal text-foreground/70">{list.length}명{q.trim() ? " (검색 결과)" : ""}</span>
+              </h3>
+              <ul className="space-y-3">
+                {list.map((m) => (
+              <li key={m.id} className="card p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-bold">
+                      {m.nickname}
+                      {m.is_admin && <span className="kw ml-2 text-xs">관리자</span>}
+                      {m.id === profile.id && <span className="ml-2 text-xs text-foreground/60">(나)</span>}
+                    </p>
+                    <p className="text-sm text-foreground/75">{m.email}</p>
+                    {detailsLabel(m.kind, m) && (
+                      <p className="text-sm">
+                        {m.kind === "teacher" ? "🏫 " : "🎓 "}{detailsLabel(m.kind, m)}
+                        <span className="ml-1 text-xs text-foreground/60">({m.info_public ? "공개" : "비공개"})</span>
+                      </p>
+                    )}
+                    {m.student_no && <p className="text-xs">🔒 학번 {m.student_no}</p>}
+                    {m.center_name && <p className="text-xs">🔒 근무 어린이집 {m.center_name}</p>}
+                    <p className="mt-1 text-xs text-foreground/60">
+                      {kindLabel(m)} · 가입 {fmt(m.created_at)} · 최근 로그인 {fmt(m.last_sign_in_at)} · 글 {m.post_count} · 댓글 {m.comment_count}
+                    </p>
+                  </div>
+                  {!m.is_admin && deleting !== m.id && (
+                    <button onClick={() => setDeleting(m.id)} className="rounded-full border border-red-700 px-3 py-1 text-sm text-red-700 hover:bg-red-50">
+                      강제 탈퇴
+                    </button>
+                  )}
+                </div>
+                {deleting === m.id && (
+                  <DeleteBox m={m} onCancel={() => setDeleting(null)} onDone={() => { setDeleting(null); load(); }} />
                 )}
-                {m.student_no && <p className="text-xs">🔒 학번 {m.student_no}</p>}
-                <p className="mt-1 text-xs text-foreground/60">
-                  {kindLabel(m)} · 가입 {fmt(m.created_at)} · 최근 로그인 {fmt(m.last_sign_in_at)} · 글 {m.post_count} · 댓글 {m.comment_count}
-                </p>
-              </div>
-              {!m.is_admin && deleting !== m.id && (
-                <button onClick={() => setDeleting(m.id)} className="rounded-full border border-red-700 px-3 py-1 text-sm text-red-700 hover:bg-red-50">
-                  강제 탈퇴
-                </button>
-              )}
+              </li>
+                ))}
+                {list.length === 0 && <li className="py-6 text-center text-sm text-foreground/60">{q.trim() ? "찾는 회원이 없어요." : "아직 회원이 없어요."}</li>}
+              </ul>
             </div>
-            {deleting === m.id && (
-              <DeleteBox m={m} onCancel={() => setDeleting(null)} onDone={() => { setDeleting(null); load(); }} />
-            )}
-          </li>
-        ))}
-        {shown.length === 0 && <li className="py-8 text-center text-foreground/60">찾는 회원이 없어요.</li>}
-      </ul>
+          );
+        })}
+      </div>
       <p className="text-xs text-foreground/60">관리자 계정은 여기서 탈퇴시킬 수 없어요. 내 계정 탈퇴는 이 페이지 아래 ‘회원 탈퇴’에서 할 수 있어요.</p>
       </>)}
     </section>

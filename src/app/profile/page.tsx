@@ -7,8 +7,9 @@ import AdminMembers from "@/components/AdminMembers";
 import { useAuth } from "@/components/AuthProvider";
 import { SAVED_EMAIL_KEY, nicknameErrorMessage, supabase } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
-import { CENTER_TYPES, REGIONS, STUDENT_NO_RE } from "@/lib/member-info";
+import { STUDENT_NO_RE } from "@/lib/member-info";
 import SchoolPicker from "@/components/SchoolPicker";
+import CenterPicker from "@/components/CenterPicker";
 
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
 const primary = "rounded-full bg-brand px-5 py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50";
@@ -74,6 +75,7 @@ function DetailsSection() {
   const [school, setSchool] = useState("");
   const [major, setMajor] = useState("");
   const [studentNo, setStudentNo] = useState("");
+  const [centerName, setCenterName] = useState("");
   const [region, setRegion] = useState("");
   const [centerType, setCenterType] = useState("");
   const [isPublic, setIsPublic] = useState(true);
@@ -95,8 +97,8 @@ function DetailsSection() {
         setIsPublic(data?.is_public ?? true);
         setLoaded(true);
       });
-    supabase.from("profile_private").select("student_no").eq("user_id", profile.id).maybeSingle()
-      .then(({ data }) => { if (alive) setStudentNo(data?.student_no ?? ""); });
+    supabase.from("profile_private").select("student_no,center_name").eq("user_id", profile.id).maybeSingle()
+      .then(({ data }) => { if (!alive) return; setStudentNo(data?.student_no ?? ""); setCenterName(data?.center_name ?? ""); });
     return () => { alive = false; };
   }, [profile]);
 
@@ -106,6 +108,7 @@ function DetailsSection() {
     setMsg(null);
     if (!teacher && (!school.trim() || !major.trim())) return setMsg({ ok: false, text: "재학 중인 학교와 학과를 골라 주세요." });
     if (teacher && (!region || !centerType)) return setMsg({ ok: false, text: "근무 지역과 어린이집 유형을 골라 주세요." });
+    if (teacher && centerName.trim().length < 2) return setMsg({ ok: false, text: "근무하는 어린이집 이름을 적어 주세요." });
     if (!teacher && studentNo.trim() && !STUDENT_NO_RE.test(studentNo.trim())) return setMsg({ ok: false, text: "학번은 숫자·영문 4~20자로 적어 주세요." });
     setBusy(true);
     const row = teacher
@@ -116,12 +119,14 @@ function DetailsSection() {
       ? await supabase.from("profile_details").update({ ...row, updated_at: new Date().toISOString() }).eq("user_id", profile.id)
       : await supabase.from("profile_details").insert({ user_id: profile.id, ...row });
     let error2 = null;
-    if (!teacher) {
-      const no = studentNo.trim() || null;
+    {
+      const priv_row = teacher
+        ? { student_no: null, center_name: centerName.trim() }
+        : { student_no: studentNo.trim() || null, center_name: null };
       const { data: priv } = await supabase.from("profile_private").select("user_id").eq("user_id", profile.id).maybeSingle();
       ({ error: error2 } = priv
-        ? await supabase.from("profile_private").update({ student_no: no, updated_at: new Date().toISOString() }).eq("user_id", profile.id)
-        : await supabase.from("profile_private").insert({ user_id: profile.id, student_no: no }));
+        ? await supabase.from("profile_private").update({ ...priv_row, updated_at: new Date().toISOString() }).eq("user_id", profile.id)
+        : await supabase.from("profile_private").insert({ user_id: profile.id, ...priv_row }));
     }
     setBusy(false);
     if (error || error2) return setMsg({ ok: false, text: "저장하지 못했어요. 잠시 후 다시 시도해 주세요." });
@@ -133,22 +138,8 @@ function DetailsSection() {
     <form onSubmit={save} className="card space-y-3 p-6">
       <h2 className="text-xl">{teacher ? "근무 정보" : "학교 정보"}</h2>
       {teacher ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium">근무 지역</span>
-            <select className={input} value={region} onChange={(e) => setRegion(e.target.value)}>
-              <option value="">선택해 주세요</option>
-              {REGIONS.map((r) => <option key={r}>{r}</option>)}
-            </select>
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium">어린이집 유형</span>
-            <select className={input} value={centerType} onChange={(e) => setCenterType(e.target.value)}>
-              <option value="">선택해 주세요</option>
-              {CENTER_TYPES.map((c) => <option key={c} value={c}>{c === "기타" ? "기타" : `${c} 어린이집`}</option>)}
-            </select>
-          </label>
-        </div>
+        <CenterPicker region={region} centerType={centerType} centerName={centerName}
+          onChange={(v) => { setRegion(v.region); setCenterType(v.centerType); setCenterName(v.centerName); }} />
       ) : (
         <div className="text-sm">
           <span className="mb-1 block font-medium">재학 중인 학교와 학과</span>
@@ -358,18 +349,20 @@ function Inner() {
         <p className="mt-1 text-foreground/75">{session?.user.email}</p>
       </div>
       <AdminMembers />
-      <NicknameSection />
-      <DetailsSection />
-      <EmailSection />
-      <PasswordSection />
-      <DeleteSection />
+      <div className="mx-auto max-w-2xl space-y-6">
+        <NicknameSection />
+        <DetailsSection />
+        <EmailSection />
+        <PasswordSection />
+        <DeleteSection />
+      </div>
     </div>
   );
 }
 
 export default function ProfilePage() {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-10">
       <PageTitle title="내 정보" desc="닉네임, 이메일, 비밀번호를 바꾸거나 탈퇴할 수 있어요." />
       <RequireAuth>
         <Inner />

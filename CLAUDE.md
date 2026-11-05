@@ -27,6 +27,8 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 회원 추가 정보(009): `profile_details`(school | region+center_type, is_public). 가입 트리거가 메타데이터에서 저장(잘못된 값은 버림). 비공개면 본인·관리자만 조회(RLS). 값 목록은 `src/lib/member-info.ts`와 DB check를 같이 바꿀 것. `/profile`에서 수정·공개 전환, 관리자 목록에 표시.
 - 학교 검증(010): 재학생은 `SchoolPicker`로 학교+학과 검색 선택(줄임말 '한양여대' 등 지원). 목록 = `src/lib/schools-data.ts`(대학알리미 대학별 학과정보 2023.6.14, data.go.kr 15014632에서 생성: 폐지 아닌 학사·전문학사 중 표준분류 소계열 유아교육/아동·가족학, 학과명 '보육', 사회복지학 중 아동·유아·영유아 → 212개교 340학과) = DB `school_majors`. DB 트리거 `verify_school`이 목록에 있으면 `school_verified`=true → 이름 옆 ✓. '목록에 없어요'로 직접 입력 가능(✓ 없음). 목록 갱신 시 두 곳을 같이 바꿀 것.
 - 학번(011): `profile_private.student_no`(선택, 영문·숫자·하이픈 4~20자). 공개 설정과 무관하게 본인·관리자만 조회. 가입 시 재학생만 저장, `/profile`에서 수정, 관리자 목록에 표시·검색.
+- 교사 근무지(012): `CenterPicker` ① 지역 → ② 유형 버튼 → ③ 어린이집 이름(필수, `profile_private.center_name`, 본인·관리자만). 공식 어린이집 목록 대조는 미구현 — 어린이집정보공개포털(info.childcare.go.kr) OPEN API 인증키 신청이 필요함(공공데이터포털 15013108은 파일 직접 다운로드 불가).
+- 회원 관리 목록은 재학생 / 현장교사 두 칸, 검색은 두 칸에 함께 적용. `/profile`은 max-w-5xl, 관리자 칸만 넓고 나머지 폼은 max-w-2xl.
 - 회원 1:1 채팅(009) `/chat`: `dm_threads`(요청 멘트 intro, pending→accepted/declined, 같은 두 사람 사이 1개·거절 후 재요청 불가) + `dm_messages`(수락 후에만). RPC `respond_dm`, `mark_dm_read`. 관리자도 대화 내용은 못 봄. 헤더 `ChatLink` 배지(받은 요청+안 읽은 대화), 대화방은 5초마다 새로고침.
 - 홈 상단 버튼은 '보육시각이란?' 하나 → `/about` 소개 페이지(사용자 요청으로 '커뮤니티 둘러보기', '보육과정 보기' 제거).
 - `/knowledge` 제목 아래 파란 형광펜(`.hl-blue`) 안내: '전공 서적을 참고' 문구(사용자 요청).
