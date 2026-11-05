@@ -20,6 +20,8 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 커뮤니티/Q&A/가입/로그인: `src/components/BoardView.tsx`, `SignupForm.tsx`, `AuthProvider.tsx` 등. 커뮤니티와 Q&A는 **로그인한 회원만 볼 수 있고** 이는 DB 보안 규칙(RLS)이 강제함.
 - Q&A `/qna` (예전 '교사 노하우' `/tips` → 리다이렉트, 006에서 board 'tips'→'qna'): 모든 회원이 질문·답변 가능. 답변 = comments. 인증 교사(kind=teacher & teacher_verified) 답변에 '✅ 인증 교사 답변' 표시. 미인증 교사에게만 TeacherCode 입력칸 노출.
 - 보육 뉴스 `/news`: `src/lib/news.ts`가 구글 뉴스 RSS(보육/어린이집/보육교사/영유아, 최근 7일) 제목·언론사·날짜·링크만 가져와 `use cache` + cacheLife(revalidate 5분)로 갱신. 기사 본문은 가져오지 않음. 링크는 news.google.com만 허용.
+- 1:1 문의 `/inquiry` (007): 테이블 inquiries + inquiry_messages. 회원은 자기 문의만, 관리자는 전체(RLS). 메시지 insert 트리거가 status(open/answered)와 admin_unread/user_unread 갱신. RPC `mark_inquiry_read`, `set_inquiry_closed`. 헤더 `InquiryLink`: 비로그인·일반회원 '💌 문의하기'(로그인/로그아웃 옆), 관리자 '📮 문의함' + 안 읽은 수 배지(1분마다·포커스 시 확인). 이메일 알림은 없음(커스텀 SMTP 필요).
+- 홈 상단 버튼은 '보육시각이란?' 하나 → `/about` 소개 페이지(사용자 요청으로 '커뮤니티 둘러보기', '보육과정 보기' 제거).
 - `/knowledge` 제목 아래 파란 형광펜(`.hl-blue`) 안내: '전공 서적을 참고' 문구(사용자 요청).
 - DB 스키마: `supabase/migrations/*.sql`. 실행: `npx supabase db query --remote=soiiihaivulcqqomzotb --file <파일> --yes`
 

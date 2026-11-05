@@ -18,12 +18,9 @@ export default function Home() {
           <br />
           <span className="hl font-bold">함께 배우고 나누는 공간</span>입니다.
         </p>
-        <div className="mt-6 flex justify-center gap-3">
-          <Link href="/community" className="rounded-full border-2 border-ink bg-sun px-6 py-2 font-bold text-ink shadow-[3px_3px_0_var(--ink)] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_var(--ink)]">
-            커뮤니티 둘러보기
-          </Link>
-          <Link href="/curriculum" className="rounded-full border-2 border-ink bg-white px-6 py-2 font-bold text-ink shadow-[3px_3px_0_var(--ink)] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_var(--ink)]">
-            보육과정 보기
+        <div className="mt-6 flex justify-center">
+          <Link href="/about" className="rounded-full border-2 border-ink bg-sun px-6 py-2 font-bold text-ink shadow-[3px_3px_0_var(--ink)] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_var(--ink)]">
+            보육시각이란?
           </Link>
         </div>
       </section>
