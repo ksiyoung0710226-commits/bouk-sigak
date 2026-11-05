@@ -6,7 +6,7 @@ import { useAuth } from "./AuthProvider";
 
 type Author = { nickname: string; kind: string; teacher_verified: boolean } | null;
 type Post = {
-  id: number; category: string; title: string; body: string; author_id: string; created_at: string;
+  id: number; category: string; title: string; body: string; author_id: string; created_at: string; pinned_at: string | null;
   profiles: Author; comments: { count: number }[];
 };
 type Comment = {
@@ -36,8 +36,9 @@ export default function BoardView({
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("posts")
-      .select("id,category,title,body,author_id,created_at,profiles(nickname,kind,teacher_verified),comments(count)")
+      .select("id,category,title,body,author_id,created_at,pinned_at,profiles(nickname,kind,teacher_verified),comments(count)")
       .eq("board", board)
+      .order("pinned_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(100);
     setPosts((data as unknown as Post[]) ?? []);
@@ -70,6 +71,12 @@ export default function BoardView({
     if (!reason || !session) return;
     const { error } = await supabase.from("reports").insert({ [kind]: id, reporter_id: session.user.id, reason: reason.slice(0, 500) });
     alert(error ? "신고에 실패했어요." : "신고가 접수되었어요. 관리자가 확인할게요.");
+  }
+
+  async function togglePin(p: Post) {
+    const { error } = await supabase.rpc("admin_set_pinned", { pid: p.id, pin: !p.pinned_at });
+    if (error) return alert("고정 상태를 바꾸지 못했어요.");
+    load();
   }
 
   const shown = filter === "전체" ? posts : posts.filter((p) => p.category === filter);
@@ -111,8 +118,9 @@ export default function BoardView({
       ) : (
         <ul className="divide-y divide-line card">
           {shown.map((p) => (
-            <li key={p.id} className="p-4">
+            <li key={p.id} className={`p-4 ${p.pinned_at ? "bg-lime/40" : ""}`}>
               <button className="w-full text-left" onClick={() => setOpen(open === p.id ? null : p.id)} aria-expanded={open === p.id}>
+                {p.pinned_at && <span className="mr-1.5 rounded-full border border-ink bg-white px-2 py-0.5 text-xs font-bold">📌 고정</span>}
                 <span className="text-xs text-brand-dark">[{p.category}]</span>
                 <p className="font-medium">
                   {qna && <span className="mr-1 font-bold">Q.</span>}{p.title}
@@ -131,6 +139,11 @@ export default function BoardView({
                   {(p.author_id === session?.user.id || profile?.is_admin) && (
                     <div className="mt-3 flex gap-3 text-xs">
                       <button onClick={() => remove(p.id)} className="text-red-700 underline">삭제</button>
+                      {profile?.is_admin && (
+                        <button onClick={() => togglePin(p)} className="font-bold underline">
+                          {p.pinned_at ? "📌 고정 해제" : "📌 맨 위에 고정"}
+                        </button>
+                      )}
                     </div>
                   )}
                   <Comments postId={p.id} qna={qna} onReport={(id) => report("comment_id", id)} onChange={load} />
