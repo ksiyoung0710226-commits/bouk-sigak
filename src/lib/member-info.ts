@@ -7,6 +7,9 @@ export const REGIONS = [
 // 영유아보육법상 어린이집 유형 + 기타
 export const CENTER_TYPES = ["국공립", "사회복지법인", "법인·단체등", "민간", "가정", "협동", "직장", "기타"] as const;
 
+// 학번: 영문·숫자·하이픈 4~20자 (DB check와 같음)
+export const STUDENT_NO_RE = /^[0-9A-Za-z-]{4,20}$/;
+
 export type Details = {
   school: string | null; major?: string | null; school_verified?: boolean;
   region: string | null; center_type: string | null; is_public?: boolean;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
-import { CENTER_TYPES, REGIONS } from "@/lib/member-info";
+import { CENTER_TYPES, REGIONS, STUDENT_NO_RE } from "@/lib/member-info";
 import SchoolPicker from "./SchoolPicker";
 
 type Kind = "student" | "teacher";
@@ -17,6 +17,7 @@ export default function SignupForm() {
   const [password, setPassword] = useState("");
   const [school, setSchool] = useState("");
   const [major, setMajor] = useState("");
+  const [studentNo, setStudentNo] = useState("");
   const [region, setRegion] = useState("");
   const [centerType, setCenterType] = useState("");
   const [infoPublic, setInfoPublic] = useState(true);
@@ -33,6 +34,7 @@ export default function SignupForm() {
     if (nickErr) return setError(nickErr);
     if (password.length < 8) return setError("비밀번호는 8자 이상이어야 해요.");
     if (kind === "student" && (!school.trim() || !major.trim())) return setError("재학 중인 학교와 학과를 골라 주세요.");
+    if (kind === "student" && studentNo.trim() && !STUDENT_NO_RE.test(studentNo.trim())) return setError("학번은 숫자·영문 4~20자로 적어 주세요.");
     if (kind === "teacher" && (!region || !centerType)) return setError("근무 지역과 어린이집 유형을 골라 주세요.");
     setBusy(true);
     const { data: free } = await supabase.rpc("nickname_available", { nick });
@@ -45,7 +47,7 @@ export default function SignupForm() {
       password,
       options: {
         data: kind === "student"
-          ? { nickname: nick, kind, school: school.trim(), major: major.trim(), info_public: infoPublic }
+          ? { nickname: nick, kind, school: school.trim(), major: major.trim(), student_no: studentNo.trim(), info_public: infoPublic }
           : { nickname: nick, kind, region, center_type: centerType, info_public: infoPublic },
         emailRedirectTo: `${window.location.origin}/login`,
       },
@@ -99,6 +101,11 @@ export default function SignupForm() {
           <div>
             <span className="mb-1 block text-sm font-medium">재학 중인 학교와 학과</span>
             <SchoolPicker school={school} major={major} onChange={(s, m) => { setSchool(s); setMajor(m); }} />
+            <label className="mt-3 block">
+              <span className="mb-1 block text-sm font-medium">학번 <span className="font-normal text-foreground/60">(선택)</span></span>
+              <input className={input} value={studentNo} onChange={(e) => setStudentNo(e.target.value)} placeholder="예: 2601234" maxLength={20} inputMode="numeric" autoComplete="off" />
+              <span className="mt-1 block text-xs text-foreground/60">🔒 학번은 다른 회원에게 <b>절대 공개되지 않고</b>, 나와 관리자만 볼 수 있어요.</span>
+            </label>
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -147,7 +154,7 @@ export default function SignupForm() {
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-1" required />
         <span>
-          [필수] 이메일, 닉네임, 가입 유형, {kind === "student" ? "재학 중인 학교·학과" : "근무 지역과 어린이집 유형"}을 서비스 운영 목적으로 수집하는 것에 동의하며, 게시글에
+          [필수] 이메일, 닉네임, 가입 유형, {kind === "student" ? "재학 중인 학교·학과(학번은 입력한 경우)" : "근무 지역과 어린이집 유형"}을 서비스 운영 목적으로 수집하는 것에 동의하며, 게시글에
           <b> 아동·기관·학부모의 실명이나 개인정보를 쓰지 않겠습니다.</b>
         </span>
       </label>

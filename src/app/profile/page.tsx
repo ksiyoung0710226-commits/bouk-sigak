@@ -7,7 +7,7 @@ import AdminMembers from "@/components/AdminMembers";
 import { useAuth } from "@/components/AuthProvider";
 import { SAVED_EMAIL_KEY, nicknameErrorMessage, supabase } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
-import { CENTER_TYPES, REGIONS } from "@/lib/member-info";
+import { CENTER_TYPES, REGIONS, STUDENT_NO_RE } from "@/lib/member-info";
 import SchoolPicker from "@/components/SchoolPicker";
 
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
@@ -73,6 +73,7 @@ function DetailsSection() {
   const { profile } = useAuth();
   const [school, setSchool] = useState("");
   const [major, setMajor] = useState("");
+  const [studentNo, setStudentNo] = useState("");
   const [region, setRegion] = useState("");
   const [centerType, setCenterType] = useState("");
   const [isPublic, setIsPublic] = useState(true);
@@ -94,6 +95,8 @@ function DetailsSection() {
         setIsPublic(data?.is_public ?? true);
         setLoaded(true);
       });
+    supabase.from("profile_private").select("student_no").eq("user_id", profile.id).maybeSingle()
+      .then(({ data }) => { if (alive) setStudentNo(data?.student_no ?? ""); });
     return () => { alive = false; };
   }, [profile]);
 
@@ -103,6 +106,7 @@ function DetailsSection() {
     setMsg(null);
     if (!teacher && (!school.trim() || !major.trim())) return setMsg({ ok: false, text: "재학 중인 학교와 학과를 골라 주세요." });
     if (teacher && (!region || !centerType)) return setMsg({ ok: false, text: "근무 지역과 어린이집 유형을 골라 주세요." });
+    if (!teacher && studentNo.trim() && !STUDENT_NO_RE.test(studentNo.trim())) return setMsg({ ok: false, text: "학번은 숫자·영문 4~20자로 적어 주세요." });
     setBusy(true);
     const row = teacher
       ? { school: null, major: null, region, center_type: centerType, is_public: isPublic }
@@ -111,8 +115,16 @@ function DetailsSection() {
     const { error } = existing
       ? await supabase.from("profile_details").update({ ...row, updated_at: new Date().toISOString() }).eq("user_id", profile.id)
       : await supabase.from("profile_details").insert({ user_id: profile.id, ...row });
+    let error2 = null;
+    if (!teacher) {
+      const no = studentNo.trim() || null;
+      const { data: priv } = await supabase.from("profile_private").select("user_id").eq("user_id", profile.id).maybeSingle();
+      ({ error: error2 } = priv
+        ? await supabase.from("profile_private").update({ student_no: no, updated_at: new Date().toISOString() }).eq("user_id", profile.id)
+        : await supabase.from("profile_private").insert({ user_id: profile.id, student_no: no }));
+    }
     setBusy(false);
-    if (error) return setMsg({ ok: false, text: "저장하지 못했어요. 잠시 후 다시 시도해 주세요." });
+    if (error || error2) return setMsg({ ok: false, text: "저장하지 못했어요. 잠시 후 다시 시도해 주세요." });
     setMsg({ ok: true, text: isPublic ? "저장했어요. 다른 회원에게 공개돼요." : "저장했어요. 나와 관리자만 볼 수 있어요." });
   }
 
@@ -141,6 +153,11 @@ function DetailsSection() {
         <div className="text-sm">
           <span className="mb-1 block font-medium">재학 중인 학교와 학과</span>
           <SchoolPicker school={school} major={major} onChange={(s, m) => { setSchool(s); setMajor(m); }} />
+          <label className="mt-3 block">
+            <span className="mb-1 block font-medium">학번 <span className="font-normal text-foreground/60">(선택)</span></span>
+            <input className={input} value={studentNo} onChange={(e) => setStudentNo(e.target.value)} placeholder="예: 2601234" maxLength={20} inputMode="numeric" autoComplete="off" />
+            <span className="mt-1 block text-xs text-foreground/60">🔒 학번은 공개 설정과 상관없이 나와 관리자만 볼 수 있어요.</span>
+          </label>
         </div>
       )}
       <div className="flex flex-wrap gap-2 text-sm" role="radiogroup" aria-label="공개 설정">
