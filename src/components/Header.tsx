@@ -14,7 +14,7 @@ export default function Header() {
         <Link href="/" className="flex items-center gap-1.5" aria-label="보육시각 홈">
           <span className="logo-font text-3xl">보육시각</span>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/mascot.svg" alt="" aria-hidden width={40} height={40} className="h-10 w-10" />
+          <img src="/mascot.svg" alt="" aria-hidden width={32} height={32} className="h-8 w-8" />
         </Link>
         <nav className="flex flex-wrap items-center gap-4 text-sm font-medium">
           {!loading &&
