@@ -4,7 +4,7 @@
 
 ## 주소와 계정
 - 사이트: https://educare-insight.vercel.app (2026-11-06 이름 변경: 보육시각 → educare insight. 예전 주소 boyuk-insight / bouk-sigak.vercel.app 은 308로 새 주소에 연결(Vercel 프로젝트 도메인 redirect)). Supabase Auth site_url·허용 주소, DB notify_admin(020)도 새 주소.
-- 코드 저장소(비공개): https://github.com/ksiyoung0710226-commits/bouk-sigak
+- 코드 저장소(공개, 2026-11-06 이름 bouk-sigak → educare-insight, 예전 주소는 자동 연결): https://github.com/ksiyoung0710226-commits/educare-insight
 - 배포: Vercel 프로젝트 이름 `boyuk-insight`. `npx vercel deploy --prod --yes` 로 배포(GitHub push만으로는 자동 배포되지 않을 수 있음. 확인할 것)
 - 데이터베이스: Supabase 프로젝트 ref `soiiihaivulcqqomzotb` (리전 싱가포르)
 - 환경 변수(.env.local, git에 없음): NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (둘 다 공개용 값). service_role / secret 키는 절대 코드나 채팅에 쓰지 말 것.
@@ -13,6 +13,7 @@
 Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대로 node_modules/next/dist/docs 를 확인), TypeScript, Tailwind, Supabase(auth + DB).
 
 ## 구조
+- AI 도우미 `/ask`(029): `POST /api/ask` → Claude(claude-opus-5-5, effort medium, fallbacks "default", 지시문 cache_control). 지시문 `src/lib/server/ai-prompt.ts` = 사이트 콘텐츠 규칙 + 보육과정 원문 + 개정 이력 + 질문 모음집 + 단원 목록(항상), 질문마다 197단원 중 관련 6개 전문을 두 글자 묶음 점수로 골라 붙임. 로그인 회원만, 하루 20번(`ai_take_quota`), 질문 내용 저장 안 함. 필요 env: ANTHROPIC_API_KEY(Vercel). 처리방침에 Anthropic 위탁 추가.
 - 회원 유형(022): profiles.kind = student(재학생) | prospective(예비 재학생, 추가 정보 없음) | teacher. 교사는 profiles.teacher_org = 어린이집 | 유치원 **필수**, 닉네임 옆 배지로 항상 표시(공개 설정 무관). 기관 종류: 어린이집 = CENTER_TYPES, 유치원 = 국립·공립·사립·기타(KINDERGARTEN_TYPES). 표시 문구는 `kindLabel`(member-info.ts). 관리자 목록에서 예비 재학생은 재학생 칸에 함께.
 - 환영 메일(023): auth.users 이메일 인증 완료(또는 인증 없이 가입) 트리거 → pg_net → `POST /api/welcome`(x-notify-secret) → Gmail '회원가입이 완료되었습니다. 환영합니다 {닉네임}님!'.
 - 글 수정(021): 작성자 본인만 category/title/body 수정(column grant + RLS, 정지 중 불가), posts.updated_at 트리거 → '(수정됨)' 표시.
