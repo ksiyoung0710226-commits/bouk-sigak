@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "./AuthProvider";
 import InquiryLink from "./InquiryLink";
 import ChatLink from "./ChatLink";
+import ReportLink from "./ReportLink";
 
 export default function Header() {
   const { session, profile, signOut, loading } = useAuth();
@@ -26,6 +27,7 @@ export default function Header() {
                   <>
                     <Link href="/profile#admin-members" className="font-bold decoration-lime decoration-4 underline-offset-4 hover:underline">🛠 회원 관리</Link>
                     <Link href="/profile#admin-coupons" className="font-bold decoration-lime decoration-4 underline-offset-4 hover:underline">🎲 회원 추첨</Link>
+                    <ReportLink />
                   </>
                 )}
                 <ChatLink />

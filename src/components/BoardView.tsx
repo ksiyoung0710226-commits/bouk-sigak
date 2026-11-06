@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, suspensionText } from "@/lib/supabase";
 import { useAuth } from "./AuthProvider";
 import DmRequestButton from "./DmRequestButton";
 import { detailsLabel, one, type Details } from "@/lib/member-info";
@@ -35,6 +35,8 @@ export default function BoardView({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [msg, setMsg] = useState("");
+  const [reporting, setReporting] = useState<{ kind: "post_id" | "comment_id"; id: number; nickname: string } | null>(null);
+  const suspended = suspensionText(profile?.suspended_until);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -57,7 +59,7 @@ export default function BoardView({
     const { error } = await supabase.from("posts").insert({
       board, category, title: title.trim(), body: body.trim(), author_id: session.user.id,
     });
-    if (error) return setMsg("글을 올리지 못했어요. 권한이나 입력 내용을 확인해 주세요.");
+    if (error) return setMsg(suspended ? `${suspended} 중이라 글을 쓸 수 없어요.` : "글을 올리지 못했어요. 권한이나 입력 내용을 확인해 주세요.");
     setTitle(""); setBody(""); setWriting(false);
     load();
   }
@@ -69,11 +71,8 @@ export default function BoardView({
     load();
   }
 
-  async function report(kind: "post_id" | "comment_id", id: number) {
-    const reason = prompt("신고 사유를 간단히 적어 주세요.");
-    if (!reason || !session) return;
-    const { error } = await supabase.from("reports").insert({ [kind]: id, reporter_id: session.user.id, reason: reason.slice(0, 500) });
-    alert(error ? "신고에 실패했어요." : "신고가 접수되었어요. 관리자가 확인할게요.");
+  function report(kind: "post_id" | "comment_id", id: number, nickname?: string | null) {
+    setReporting({ kind, id, nickname: nickname ?? "작성자" });
   }
 
   async function togglePin(p: Post) {
@@ -97,12 +96,17 @@ export default function BoardView({
               className={`rounded-full px-3 py-1 text-sm ${filter === c ? "bg-brand text-white" : "bg-soft"}`}>{c}</button>
           ))}
         </div>
-        {canWrite && (
+        {canWrite && !suspended && (
           <button onClick={() => setWriting((v) => !v)} className="rounded-full bg-brand px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-dark">
             {writing ? "닫기" : qna ? "🙋 질문하기" : "✏️ 글쓰기"}
           </button>
         )}
       </div>
+      {suspended && (
+        <p className="mb-4 rounded-lg border-2 border-red-700 bg-red-50 p-3 text-sm text-red-800" role="alert">
+          ⛔ 운영 규칙 위반으로 <b>{suspended}</b> 중이에요. 그동안 글·댓글·1:1 채팅을 쓸 수 없어요(읽기는 가능). 궁금한 점은 ‘💌 문의하기’로 알려 주세요.
+        </p>
+      )}
       {!canWrite && writeHint}
 
       {writing && (
@@ -139,7 +143,7 @@ export default function BoardView({
                 <p className="mt-1 line-clamp-2 text-sm text-foreground/70">{p.body}</p>
               </button>
               <AuthorLine author={p.profiles} userId={p.author_id} createdAt={p.created_at}
-                onReport={p.author_id === session?.user.id ? undefined : () => report("post_id", p.id)} />
+                onReport={p.author_id === session?.user.id ? undefined : () => report("post_id", p.id, p.profiles?.nickname)} />
             </li>
           ))}
         </ul>
@@ -155,7 +159,7 @@ export default function BoardView({
           </h2>
           <div className="mt-2">
             <AuthorLine author={openPost.profiles} userId={openPost.author_id} createdAt={openPost.created_at}
-              onReport={openPost.author_id === session?.user.id ? undefined : () => report("post_id", openPost.id)} />
+              onReport={openPost.author_id === session?.user.id ? undefined : () => report("post_id", openPost.id, openPost.profiles?.nickname)} />
           </div>
           <p className="mt-6 whitespace-pre-wrap text-base leading-relaxed">{openPost.body}</p>
           {(openPost.author_id === session?.user.id || profile?.is_admin) && (
@@ -169,10 +173,71 @@ export default function BoardView({
             </div>
           )}
           <div className="mt-8 border-t-2 border-ink pt-4">
-            <Comments postId={openPost.id} qna={qna} onReport={(id) => report("comment_id", id)} onChange={load} />
+            <Comments postId={openPost.id} qna={qna} onReport={(id, nick) => report("comment_id", id, nick)} onChange={load} />
           </div>
         </PostModal>
       )}
+      {reporting && <ReportDialog target={reporting} onClose={() => setReporting(null)} />}
+    </div>
+  );
+}
+
+// 신고 창: 이유를 고르고(필수) 자세한 내용을 적을 수 있다 → 관리자 신고 관리 화면에 그대로 보임
+const REPORT_REASONS = ["욕설·비방·혐오 표현", "아동·학부모·기관 개인정보 노출", "광고·홍보·도배", "음란하거나 불쾌한 내용", "허위·잘못된 정보", "기타"];
+
+function ReportDialog({ target, onClose }: { target: { kind: "post_id" | "comment_id"; id: number; nickname: string }; onClose: () => void }) {
+  const { session } = useAuth();
+  const [reason, setReason] = useState("");
+  const [detail, setDetail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const what = target.kind === "comment_id" ? "댓글" : "글";
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    if (!session) return;
+    if (!reason) return setErr("신고 이유를 골라 주세요.");
+    if (reason === "기타" && !detail.trim()) return setErr("‘기타’를 고르셨다면 이유를 적어 주세요.");
+    setBusy(true);
+    const text = `[${reason}]${detail.trim() ? " " + detail.trim() : ""}`.slice(0, 500);
+    const { error } = await supabase.from("reports").insert({ [target.kind]: target.id, reporter_id: session.user.id, reason: text });
+    setBusy(false);
+    if (error) return setErr("신고에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    alert("신고가 접수되었어요. 관리자가 확인한 뒤 처리 결과를 가입한 이메일로 알려 드릴게요.");
+    onClose();
+  }
+
+  return (
+    <div role="dialog" aria-modal="true" aria-labelledby="report-title" className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <form onSubmit={send} onClick={(e) => e.stopPropagation()} className="card w-full max-w-md space-y-3 bg-background p-5 text-sm">
+        <h2 id="report-title" className="text-lg font-bold">🚩 {target.nickname} 님의 {what} 신고</h2>
+        <fieldset className="space-y-1.5">
+          <legend className="mb-1 font-medium">신고 이유 (필수)</legend>
+          {REPORT_REASONS.map((r) => (
+            <label key={r} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 ${reason === r ? "border-ink bg-lime/50" : "border-line bg-white"}`}>
+              <input type="radio" name="report-reason" value={r} checked={reason === r} onChange={() => setReason(r)} />
+              {r}
+            </label>
+          ))}
+        </fieldset>
+        <label className="block">
+          <span className="mb-1 block font-medium">자세한 내용 {reason === "기타" ? "(필수)" : "(선택)"}</span>
+          <textarea className={`${input} min-h-20`} value={detail} onChange={(e) => setDetail(e.target.value)} maxLength={450}
+            placeholder="어떤 부분이 문제인지 적어 주시면 처리에 도움이 돼요." />
+        </label>
+        <p className="text-xs text-foreground/60">신고한 사람은 상대방에게 알려지지 않아요. 허위 신고가 반복되면 이용이 제한될 수 있어요.</p>
+        {err && <p className="text-red-700">{err}</p>}
+        <div className="flex gap-2">
+          <button disabled={busy} className="rounded-full bg-red-700 px-5 py-2 font-medium text-white disabled:opacity-50">{busy ? "보내는 중…" : "신고하기"}</button>
+          <button type="button" onClick={onClose} className="rounded-full border border-line bg-white px-5 py-2">취소</button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -199,10 +264,12 @@ function PostModal({ onClose, children }: { onClose: () => void; children: React
   );
 }
 
-function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: boolean; onReport: (id: number) => void; onChange: () => void }) {
+function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: boolean; onReport: (id: number, nickname?: string | null) => void; onChange: () => void }) {
   const { session, profile } = useAuth();
   const [items, setItems] = useState<Comment[]>([]);
   const [text, setText] = useState("");
+  const [err, setErr] = useState("");
+  const suspended = suspensionText(profile?.suspended_until);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -217,7 +284,9 @@ function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: bo
   async function add(e: React.FormEvent) {
     e.preventDefault();
     if (!session || !text.trim()) return;
-    await supabase.from("comments").insert({ post_id: postId, body: text.trim(), author_id: session.user.id });
+    setErr("");
+    const { error } = await supabase.from("comments").insert({ post_id: postId, body: text.trim(), author_id: session.user.id });
+    if (error) return setErr(suspended ? `${suspended} 중이라 쓸 수 없어요.` : "등록하지 못했어요. 잠시 후 다시 시도해 주세요.");
     setText("");
     load();
     onChange();
@@ -238,7 +307,7 @@ function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: bo
           <li key={c.id} className={`note p-3 text-sm ${isTeacherAnswer(c) ? "border-2 border-ink" : ""}`}>
             {isTeacherAnswer(c) && <p className="mb-1 text-xs font-bold"><span className="kw">✅ 인증 교사 답변</span></p>}
             <AuthorLine author={c.profiles} userId={c.author_id} createdAt={c.created_at}
-              onReport={c.author_id === session?.user.id ? undefined : () => onReport(c.id)} />
+              onReport={c.author_id === session?.user.id ? undefined : () => onReport(c.id, c.profiles?.nickname)} />
             <p className="whitespace-pre-wrap">{c.body}</p>
             {(c.author_id === session?.user.id || profile?.is_admin) && (
               <div className="mt-1 flex gap-3 text-xs">
@@ -248,10 +317,15 @@ function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: bo
           </li>
         ))}
       </ul>
+      {err && <p className="mt-2 text-sm text-red-700">{err}</p>}
+      {suspended ? (
+        <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">⛔ {suspended} 중이라 {qna ? "답변" : "댓글"}을 쓸 수 없어요.</p>
+      ) : (
       <form onSubmit={add} className="mt-3 flex gap-2">
         <input className={input} value={text} onChange={(e) => setText(e.target.value)} placeholder={qna ? "알고 있는 내용이나 경험을 답변으로 남겨 주세요" : "따뜻한 댓글을 남겨 주세요"} maxLength={1000} />
         <button className="shrink-0 rounded-full bg-brand px-4 text-sm font-medium text-white">등록</button>
       </form>
+      )}
     </div>
   );
 }

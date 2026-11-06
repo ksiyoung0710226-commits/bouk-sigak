@@ -14,6 +14,8 @@ export default function Login() {
   const [autoLogin, setAuto] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [unconfirmed, setUnconfirmed] = useState(false);
+  const [resent, setResent] = useState("");
 
   useEffect(() => {
     const saved = localStorage.getItem(SAVED_EMAIL_KEY);
@@ -33,12 +35,20 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
     if (error) {
-      setError(error.message.includes("not confirmed") ? "이메일 인증을 먼저 완료해 주세요." : "이메일 또는 비밀번호가 맞지 않아요.");
+      const notConfirmed = error.message.includes("not confirmed");
+      setUnconfirmed(notConfirmed);
+      setError(notConfirmed ? "이메일 인증을 먼저 완료해 주세요. 메일함(스팸함 포함)에서 ‘보육시각’ 인증 메일을 찾아 주세요." : "이메일 또는 비밀번호가 맞지 않아요.");
       return;
     }
     if (saveEmail) localStorage.setItem(SAVED_EMAIL_KEY, email.trim());
     else localStorage.removeItem(SAVED_EMAIL_KEY);
     window.location.href = "/community";
+  }
+
+  async function resend() {
+    setResent("");
+    const { error } = await supabase.auth.resend({ type: "signup", email: email.trim(), options: { emailRedirectTo: `${window.location.origin}/login` } });
+    setResent(error ? "잠시 후 다시 시도해 주세요(1분에 한 번 보낼 수 있어요)." : "인증 메일을 다시 보냈어요. 메일함을 확인해 주세요.");
   }
 
   return (
@@ -68,10 +78,20 @@ export default function Login() {
           비밀번호는 사이트가 저장하지 않고, 브라우저의 『비밀번호 저장』 기능으로 저장할 수 있어요.
         </p>
         {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        {unconfirmed && (
+          <p className="text-sm">
+            <button type="button" onClick={resend} className="font-bold underline">📧 인증 메일 다시 받기</button>
+            {resent && <span className="ml-2 text-foreground/70">{resent}</span>}
+          </p>
+        )}
         <button disabled={busy} className="w-full rounded-full bg-brand px-6 py-3 font-medium text-white hover:bg-brand-dark disabled:opacity-50">
           {busy ? "로그인 중…" : "로그인"}
         </button>
-        <p className="text-center text-sm">처음이세요? <Link href="/signup" className="text-brand-dark underline">회원가입</Link></p>
+        <p className="text-center text-sm">
+          <Link href="/forgot-password" className="underline">비밀번호를 잊으셨나요?</Link>
+          <span className="mx-2 text-foreground/40">|</span>
+          처음이세요? <Link href="/signup" className="text-brand-dark underline">회원가입</Link>
+        </p>
       </form>
     </div>
   );

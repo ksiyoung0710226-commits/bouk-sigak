@@ -42,7 +42,17 @@ export type Profile = {
   kind: "student" | "teacher";
   teacher_verified: boolean;
   is_admin: boolean;
+  suspended_until: string | null;
 };
+
+// 이용 정지 상태 문구(정지 아니면 null). DB는 영구 정지를 'infinity'로 저장.
+export function suspensionText(until: string | null | undefined): string | null {
+  if (!until) return null;
+  if (until === "infinity") return "영구 이용 정지";
+  const d = new Date(until);
+  if (isNaN(d.getTime()) || d <= new Date()) return null;
+  return `${d.toLocaleString("ko-KR", { dateStyle: "long", timeStyle: "short" })}까지 이용 정지`;
+}
 
 // 데이터베이스 오류를 사용자에게 보여 줄 문장으로 바꿉니다.
 export function nicknameErrorMessage(err: { code?: string; message?: string } | null): string {

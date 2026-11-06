@@ -141,7 +141,8 @@ export default function SignupForm() {
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-1" required />
         <span>
-          [필수] 이메일, 닉네임, 가입 유형, {kind === "student" ? "재학 중인 학교·학과(학번은 입력한 경우)" : "근무 지역과 어린이집 분류"}을 서비스 운영 목적으로 수집하는 것에 동의하며, 게시글에
+          [필수] 만 14세 이상이며, <a href="/terms" target="_blank" className="font-bold underline">이용약관</a>과{" "}
+          <a href="/privacy" target="_blank" className="font-bold underline">개인정보 처리방침</a>(이메일, 닉네임, 가입 유형, {kind === "student" ? "재학 중인 학교·학과(학번은 입력한 경우)" : "근무 지역과 어린이집 분류"} 수집·국외 이전 포함)에 동의합니다. 게시글에
           <b> 아동·기관·학부모의 실명이나 개인정보를 쓰지 않겠습니다.</b>
         </span>
       </label>

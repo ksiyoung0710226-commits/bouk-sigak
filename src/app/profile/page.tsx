@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import PageTitle from "@/components/PageTitle";
 import RequireAuth from "@/components/RequireAuth";
 import AdminMembers from "@/components/AdminMembers";
+import AdminReports from "@/components/AdminReports";
+import AdminKakao from "@/components/AdminKakao";
 import { useAuth } from "@/components/AuthProvider";
-import { SAVED_EMAIL_KEY, nicknameErrorMessage, supabase } from "@/lib/supabase";
+import { SAVED_EMAIL_KEY, nicknameErrorMessage, supabase, suspensionText } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
 import { STUDENT_NO_RE } from "@/lib/member-info";
 import SchoolPicker from "@/components/SchoolPicker";
@@ -343,8 +345,13 @@ function Inner() {
       <div className="panel-lav p-5 text-sm">
         <p><b>{profile?.nickname}</b> · {profile?.kind === "teacher" ? "현장교사" : "재학생"}{profile?.is_admin ? " · 관리자" : ""}</p>
         <p className="mt-1 text-foreground/75">{session?.user.email}</p>
+        {suspensionText(profile?.suspended_until) && (
+          <p className="mt-2 font-bold text-red-700">⛔ {suspensionText(profile?.suspended_until)} 중 (글·댓글·채팅 쓰기 제한)</p>
+        )}
       </div>
       <AdminMembers />
+      <AdminReports />
+      <AdminKakao />
       <div className="mx-auto max-w-2xl space-y-6">
         <NicknameSection />
         <DetailsSection />
