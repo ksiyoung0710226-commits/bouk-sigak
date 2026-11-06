@@ -5,7 +5,43 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "./AuthProvider";
 
-type Turn = { role: "user" | "assistant"; content: string };
+type Sources = { site: { label: string; url: string }[]; official: { label: string; url?: string }[] };
+type Turn = { role: "user" | "assistant"; content: string; sources?: Sources; mode?: string };
+
+// 서버가 보낸 출처(헤더, base64 JSON) 읽기
+function readSources(h: string | null): Sources | undefined {
+  if (!h) return undefined;
+  try { return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(h), (c) => c.charCodeAt(0)))); } catch { return undefined; }
+}
+
+// 답 아래 출처 상자: 사이트 자료(안쪽 링크) + 공식 출처(https만 바깥 링크)
+function SourceBox({ src }: { src: Sources }) {
+  if (!src.site.length && !src.official.length) return null;
+  return (
+    <div className="mt-3 rounded-xl border border-ink bg-white/80 p-3 text-xs leading-relaxed">
+      <p className="font-bold">📎 출처</p>
+      {src.site.length > 0 && (
+        <ul className="mt-1 list-disc pl-4">
+          {src.site.map((x) => <li key={x.url + x.label}><Link href={x.url} className="font-medium text-brand-dark underline">{x.label}</Link> <span className="text-foreground/60">(educare insight)</span></li>)}
+        </ul>
+      )}
+      {src.official.length > 0 && (
+        <>
+          <p className="mt-2 font-bold">공식 자료</p>
+          <ul className="mt-1 list-disc pl-4">
+            {src.official.map((x) => (
+              <li key={(x.url ?? "") + x.label}>
+                {x.url && /^https:\/\//.test(x.url)
+                  ? <a href={x.url} target="_blank" rel="noopener noreferrer" className="underline">{x.label} ↗</a>
+                  : x.label}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
 
 const EXAMPLES = [
   "영아반 낮잠 시간에 잠들기 어려워하는 아이를 어떻게 도와주면 좋을까요?",
@@ -52,6 +88,7 @@ export default function AskAI({ initial = "" }: { initial?: string }) {
     const question = q.trim();
     if (!question || busy || !session) return;
     setErr(""); setBusy(true); setText("");
+    // 질문마다 따로 답해요(앞 대화는 보내지 않음)
     const history: Turn[] = [...turns, { role: "user", content: question }];
     setTurns([...history, { role: "assistant", content: "" }]);
     try {
@@ -59,7 +96,7 @@ export default function AskAI({ initial = "" }: { initial?: string }) {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token ?? ""}` },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ question }),
       });
       if (!res.ok || !res.body) {
         const j = await res.json().catch(() => ({}));
@@ -69,6 +106,8 @@ export default function AskAI({ initial = "" }: { initial?: string }) {
       }
       const r = res.headers.get("X-AI-Remaining");
       if (r) setLeft(Number(r));
+      const sources = readSources(res.headers.get("X-Sources"));
+      const mode = res.headers.get("X-Mode") ?? "";
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       let acc = "";
@@ -76,7 +115,7 @@ export default function AskAI({ initial = "" }: { initial?: string }) {
         const { done, value } = await reader.read();
         if (done) break;
         acc += dec.decode(value, { stream: true });
-        setTurns([...history, { role: "assistant", content: acc }]);
+        setTurns([...history, { role: "assistant", content: acc, sources, mode }]);
       }
     } catch {
       setErr("연결이 끊겼어요. 다시 시도해 주세요.");
@@ -92,8 +131,8 @@ export default function AskAI({ initial = "" }: { initial?: string }) {
   return (
     <div className="space-y-4">
       <p className="note p-3 text-sm">
-        🤖 보육·유아교육에 맞춘 AI예요. <b>AI 답변은 틀릴 수 있으니 전공 서적과 공식 자료로 꼭 확인해 주세요.</b> 아이·학부모·기관의 실명이나 개인정보는 쓰지 말아 주세요.
-        질문 내용은 저장하지 않지만, 답을 만들기 위해 AI 서비스(Anthropic)로 전송돼요.
+        🤖 보육·유아교육에 특화된 AI예요. <b>사이트가 공식 자료로 확인한 내용으로만 답하고, 모든 답에 출처를 붙여요.</b> 그래도 AI 답변은 틀릴 수 있으니 전공 서적과 공식 자료로 꼭 확인해 주세요.
+        아이·학부모·기관의 실명이나 개인정보는 쓰지 말아 주세요. 질문은 사이트에 저장하지 않지만, 답을 만들기 위해 구글 AI(Gemini 무료 요금제)로 전송되며 구글 서비스 개선에 쓰일 수 있어요.
       </p>
 
       {!session ? (
@@ -114,7 +153,15 @@ export default function AskAI({ initial = "" }: { initial?: string }) {
               <div key={i} className={`flex ${t.role === "user" ? "justify-end" : "justify-start"} gap-2`}>
                 {t.role === "assistant" && <span aria-hidden className="text-2xl">🤖</span>}
                 <div className={`max-w-[88%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${t.role === "user" ? "bg-brand text-white" : "card"}`}>
-                  {t.role === "assistant" ? (t.content ? <Rich text={t.content} /> : <span className="text-foreground/60">생각하는 중…</span>) : t.content}
+                  {t.role === "assistant" ? (
+                    t.content ? (
+                      <>
+                        {t.mode === "helper" && <p className="mb-1 text-xs font-bold text-brand-dark">📚 지식 도우미 (사이트 자료 요약)</p>}
+                        <Rich text={t.content} />
+                        {t.sources && <SourceBox src={t.sources} />}
+                      </>
+                    ) : <span className="text-foreground/60">확인된 자료를 찾는 중…</span>
+                  ) : t.content}
                 </div>
               </div>
             ))}
@@ -128,7 +175,7 @@ export default function AskAI({ initial = "" }: { initial?: string }) {
             <button disabled={busy || !text.trim()} className="shrink-0 rounded-full bg-brand px-5 font-medium text-white disabled:opacity-50">{busy ? "…" : "질문"}</button>
           </form>
           <p className="flex justify-between text-xs text-foreground/60">
-            <span>Enter로 보내기 · Shift+Enter로 줄바꿈 · 하루 20번까지</span>
+            <span>Enter로 보내기 · Shift+Enter로 줄바꿈 · 하루 10번까지 · 질문마다 따로 답해요</span>
             {left !== null && <span>오늘 남은 질문 {left}번</span>}
             {turns.length > 0 && !busy && <button onClick={() => setTurns([])} className="underline">새 대화</button>}
           </p>

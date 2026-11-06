@@ -1,34 +1,20 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import { userClient } from "@/lib/server/supa";
-import { AI_SYSTEM, findSiteMaterial } from "@/lib/server/ai-prompt";
-import { AI_ENABLED } from "@/lib/features";
+import { AI_SYSTEM, helperAnswer, materialText, retrieve, sourcesOf } from "@/lib/server/ai-prompt";
 
-// AI 도우미: 로그인한 회원만, 하루 DAILY_LIMIT 번. 질문 내용은 저장하지 않는다.
+// AI 도우미(구글 Gemini 무료 요금제). 로그인 회원만, 하루 DAILY_LIMIT 번. 질문 내용은 사이트에 저장하지 않는다.
+// 답의 근거는 사이트의 확인된 자료만 쓰고, 출처는 서버가 X-Sources 헤더로 함께 보내 화면이 항상 표시한다.
+// GEMINI_API_KEY가 없거나 무료 사용량을 넘으면 '지식 도우미'(자료 요약)로 대신 답한다.
 export const maxDuration = 60;
-const DAILY_LIMIT = 20;
-const MAX_TURNS = 10;
-const MAX_CHARS = 2000;
+const DAILY_LIMIT = 10;
+const MODEL = "gemini-3.8-flash";
 
-type Turn = { role: "user" | "assistant"; content: string };
+const enc = (v: unknown) => Buffer.from(JSON.stringify(v), "utf8").toString("base64");
 
 export async function POST(req: Request) {
-  if (!AI_ENABLED || !process.env.ANTHROPIC_API_KEY) {
-    return Response.json({ error: "AI 도우미를 준비하고 있어요. 조금만 기다려 주세요." }, { status: 503 });
-  }
-
   const body = await req.json().catch(() => null);
-  const raw: unknown[] = Array.isArray(body?.messages) ? body.messages : [];
-  const turns: Turn[] = raw
-    .filter((m): m is Turn => !!m && typeof m === "object" && ((m as Turn).role === "user" || (m as Turn).role === "assistant") && typeof (m as Turn).content === "string")
-    // 이전 AI 답변은 짧게만 다시 보냄(조작된 긴 답으로 지시문을 흔들지 못하게)
-    .map((m) => ({ role: m.role, content: m.content.trim().slice(0, m.role === "assistant" ? 1000 : MAX_CHARS) }))
-    .filter((m) => m.content)
-    .slice(-MAX_TURNS);
-  // 첫 메시지는 user, 마지막도 user여야 함
-  while (turns.length && turns[0].role !== "user") turns.shift();
-  if (!turns.length || turns[turns.length - 1].role !== "user") {
-    return Response.json({ error: "질문을 적어 주세요." }, { status: 400 });
-  }
+  const question = typeof body?.question === "string" ? body.question.trim().slice(0, 1000) : "";
+  if (!question) return Response.json({ error: "질문을 적어 주세요." }, { status: 400 });
 
   // 로그인 확인 + 하루 사용량 차감(DB 함수가 회원 토큰으로 확인)
   const db = userClient(req);
@@ -40,66 +26,60 @@ export async function POST(req: Request) {
   }
   if (left === -1) return Response.json({ error: `오늘 질문 횟수(${DAILY_LIMIT}번)를 다 썼어요. 내일 다시 물어봐 주세요.` }, { status: 429 });
 
-  // 질문(직전 질문 포함)과 관련 있는 사이트 단원 전문을 골라 마지막 질문 앞에 붙인다
-  const userTurns = turns.filter((t) => t.role === "user");
-  const query = userTurns.slice(-2).map((t) => t.content).join(" ");
-  const material = findSiteMaterial(query);
-  const last = turns[turns.length - 1];
-  const messages: Anthropic.Beta.BetaMessageParam[] = [
-    ...turns.slice(0, -1),
-    {
-      role: "user",
-      content: material
-        ? [{ type: "text", text: `<사이트_자료>\n${material}</사이트_자료>` }, { type: "text", text: last.content }]
-        : last.content,
-    },
-  ];
+  const found = retrieve(question);
+  const headers = {
+    "Content-Type": "text/plain; charset=utf-8",
+    "Cache-Control": "no-store",
+    "X-AI-Remaining": String(left),
+    "X-Sources": enc(sourcesOf(found)),
+  };
 
-  const client = new Anthropic();
-  const stream = client.beta.messages.stream({
-    model: "claude-opus-5-5",
-    max_tokens: 4000,
-    output_config: { effort: "medium" },
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    system: [{ type: "text", text: AI_SYSTEM, cache_control: { type: "ephemeral" } }],
-    messages,
-  });
+  // 확인된 자료에 관련 내용이 없으면 AI를 부르지 않음(지어내지 않게) + 사용량 돌려주기
+  if (found.length === 0) {
+    await db.rpc("ai_refund_quota").then(() => {}, () => {});
+    return new Response(
+      "확인된 자료에서는 이 질문에 대한 내용을 찾지 못했어요. 😢\n\n" +
+      "다른 낱말로 다시 물어보거나, [Q&A 게시판](/qna)에서 현장 선생님께 질문해 보세요. 전공 서적과 공식 기관 자료도 함께 확인해 주세요.",
+      { headers: { ...headers, "X-AI-Remaining": String(left + 1), "X-Mode": "none" } },
+    );
+  }
 
+  if (!process.env.GEMINI_API_KEY) {
+    return new Response(helperAnswer(found), { headers: { ...headers, "X-Mode": "helper" } });
+  }
+
+  const ai = new GoogleGenAI({});
+  const input = `<자료>\n${materialText(found)}</자료>\n\n질문: ${question}`;
   const encoder = new TextEncoder();
   const out = new ReadableStream<Uint8Array>({
     async start(controller) {
+      let wrote = false;
       try {
+        const stream = await ai.interactions.create({
+          model: MODEL,
+          system_instruction: AI_SYSTEM,
+          input,
+          store: false,
+          stream: true,
+          generation_config: { thinking_level: "low", max_output_tokens: 1500 },
+        });
         for await (const event of stream) {
-          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          if (event.event_type === "step.delta" && event.delta.type === "text" && event.delta.text) {
             controller.enqueue(encoder.encode(event.delta.text));
+            wrote = true;
           }
         }
-        const final = await stream.finalMessage();
-        if (final.stop_reason === "refusal") {
-          controller.enqueue(encoder.encode("\n\n이 질문에는 답하기 어려워요. 보육·유아교육과 관련된 다른 질문을 해 주세요."));
-        } else if (final.stop_reason === "max_tokens") {
-          controller.enqueue(encoder.encode("\n\n(답이 길어서 여기까지 보여 드렸어요. 더 궁금한 부분을 이어서 물어봐 주세요.)"));
-        }
+        if (!wrote) throw new Error("empty answer");
       } catch (e) {
-        // 답을 못 만들었으면 오늘 사용량 1회를 돌려줌
+        console.error("ask gemini", e instanceof Error ? e.message : e);
+        // AI가 답하지 못하면(무료 사용량 초과 등) 자료 요약으로 대신 답하고 사용량은 돌려줌
         await db.rpc("ai_refund_quota").then(() => {}, () => {});
-        if (e instanceof Anthropic.RateLimitError) {
-          controller.enqueue(encoder.encode("\n\n지금 질문이 많아요. 잠시 후 다시 물어봐 주세요."));
-        } else {
-          console.error("ask", e instanceof Anthropic.APIError ? `${e.status} ${e.message}` : e);
-          controller.enqueue(encoder.encode("\n\n답을 만드는 중에 문제가 생겼어요. 잠시 후 다시 시도해 주세요."));
-        }
+        controller.enqueue(encoder.encode((wrote ? "\n\n(답이 중간에 끊겼어요. 아래 자료를 함께 확인해 주세요.)\n\n" : "지금은 AI가 바빠서 확인된 자료로 대신 답해 드릴게요.\n\n") + helperAnswer(found)));
       } finally {
         controller.close();
       }
     },
-    cancel() {
-      stream.abort();
-    },
   });
 
-  return new Response(out, {
-    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-AI-Remaining": String(left) },
-  });
+  return new Response(out, { headers: { ...headers, "X-Mode": "ai" } });
 }

@@ -13,7 +13,7 @@
 Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대로 node_modules/next/dist/docs 를 확인), TypeScript, Tailwind, Supabase(auth + DB).
 
 ## 구조
-- AI 도우미 `/ask`(029): `POST /api/ask` → Claude(claude-opus-5-5, effort medium, fallbacks "default", 지시문 cache_control). 지시문 `src/lib/server/ai-prompt.ts` = 사이트 콘텐츠 규칙 + 보육과정 원문 + 개정 이력 + 질문 모음집 + 단원 목록(항상), 질문마다 197단원 중 관련 6개 전문을 두 글자 묶음 점수로 골라 붙임. 로그인 회원만, 하루 20번(`ai_take_quota`), 질문 내용 저장 안 함. 필요 env: ANTHROPIC_API_KEY(Vercel). 처리방침에 Anthropic 위탁 추가.
+- AI 도우미 `/ask`(029·030): **구글 Gemini 무료 요금제**(`@google/genai` interactions API, 모델 gemini-3.8-flash, env `GEMINI_API_KEY`). 사용자 요구: **공인 자료에서만 답하고 모든 답에 출처·링크**. `src/lib/server/ai-prompt.ts`가 아동 필수 지식 197단원 + 보육과정 원문 + 질문 모음집을 문서로 만들어 질문마다 관련 자료를 고르고(관련 없으면 AI 안 부르고 '찾지 못했어요'), 출처(사이트 링크 + 과목별 공식 references)는 서버가 `X-Sources` 헤더로 보내 화면이 항상 표시. 키 없음·무료 한도 초과·오류 시 '지식 도우미'(자료 요약)로 대답. 로그인 회원만 하루 10번(`ai_take_quota`/`ai_refund_quota`), 질문마다 따로(대화 이력 안 보냄). 홈·소개 카드는 `src/lib/features.ts` `AI_ENABLED`(실제 답변 확인 후 true로 — 사용자 요청), /ask 주소는 늘 열림. 처리방침: Google(Gemini 무료 — 서비스 개선에 쓰일 수 있음) 위탁 행.
 - 회원 유형(022): profiles.kind = student(재학생) | prospective(예비 재학생, 추가 정보 없음) | teacher. 교사는 profiles.teacher_org = 어린이집 | 유치원 **필수**, 닉네임 옆 배지로 항상 표시(공개 설정 무관). 기관 종류: 어린이집 = CENTER_TYPES, 유치원 = 국립·공립·사립·기타(KINDERGARTEN_TYPES). 표시 문구는 `kindLabel`(member-info.ts). 관리자 목록에서 예비 재학생은 재학생 칸에 함께.
 - 환영 메일(023): auth.users 이메일 인증 완료(또는 인증 없이 가입) 트리거 → pg_net → `POST /api/welcome`(x-notify-secret) → Gmail '회원가입이 완료되었습니다. 환영합니다 {닉네임}님!'.
 - 글 수정(021): 작성자 본인만 category/title/body 수정(column grant + RLS, 정지 중 불가), posts.updated_at 트리거 → '(수정됨)' 표시.
@@ -72,7 +72,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 관리자 회원 관리: `/profile` 내 정보 칸 바로 아래 `AdminMembers` 컴포넌트(`src/components/AdminMembers.tsx`, 관리자에게만 렌더링; 헤더 "🛠 회원 관리" → `/profile#admin-members`): 회원 목록(이메일·닉네임·유형·가입일·최근 로그인·글/댓글 수, 검색), 강제 탈퇴(닉네임 입력 확인). DB 함수 `admin_list_members()`, `admin_delete_member(uuid)`(005) — 관리자 여부를 DB가 확인. 본인·다른 관리자는 삭제 불가.
 
 ## 남은 할 일 (2026-11-06 최종 점검 후)
-1. **AI 켜기(사용자 작업)**: 지금 `src/lib/features.ts`의 `AI_ENABLED = false`로 숨김(사용자 요청, 심사 중 '준비 중' 화면 방지). 사용자가 Anthropic API 키를 만들면 → Vercel env `ANTHROPIC_API_KEY`(입력 창으로 받기, 채팅에 쓰지 않게) → `AI_ENABLED = true` → push → 재학생·교사 계정으로 실제 답변 확인.
+1. **AI 켜기(사용자 작업)**: 사용자가 Google AI Studio에서 무료 Gemini API 키를 만들면 → Vercel env `GEMINI_API_KEY`(가려진 입력 창으로 받기, 채팅에 쓰지 않게) → 재학생·교사 계정으로 실제 답변·출처 확인 → `AI_ENABLED = true` → push(홈에 칸 표시).
 2. **콘텐츠 교재 대조**: 새 5과목(ece-intro, play-guidance, language-literature, math-science, parent-education, 53단원)은 한 줄씩 검토 안 함. 기존 교재 대조 필요 항목(손 씻기, 아동학대·신고, 보육행정, 프로젝트 접근법 3단계, 이차 정서 시기, 볼비 단계 월령)도 그대로.
 3. 카카오톡 알림은 사용 안 함(코드·DB는 남김, 관리자 화면 `AdminKakao`는 주석 처리, 처리방침 위탁표에서 카카오 제거). 다시 쓰려면 둘 다 되돌리고 KAKAO_REST_KEY 등록.
 4. 아직 안 만든 요청: 관리자 1:1 메시지 → 회원 메일 알림, 내 글 새 댓글 🔔 숫자 알림, 교사 인증(기관 이름 + 관리자 승인) 후에만 Q&A 답변, 1:1 메시지·채팅 사진 첨부, Gmail 'educare insight' 라벨(사용자가 Gmail 필터로).
