@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PageTitle from "@/components/PageTitle";
+import { AI_ENABLED } from "@/lib/features";
 
 export const metadata = { title: "educare insight란? | educare insight" };
 
@@ -31,7 +32,7 @@ export default function About() {
 
       <h2 className="mt-10 mb-4 text-2xl font-bold">이런 걸 할 수 있어요</h2>
       <div className="grid gap-4 sm:grid-cols-2">
-        {features.map((f) => (
+        {features.filter((f) => AI_ENABLED || f.href !== "/ask").map((f) => (
           <Link key={f.href} href={f.href} className="card p-5">
             <p className="text-lg font-bold">{f.e} {f.t}</p>
             <p className="mt-1 text-sm text-foreground/75">{f.d}</p>

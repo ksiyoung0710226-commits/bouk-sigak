@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { userClient } from "@/lib/server/supa";
 import { AI_SYSTEM, findSiteMaterial } from "@/lib/server/ai-prompt";
+import { AI_ENABLED } from "@/lib/features";
 
 // AI 도우미: 로그인한 회원만, 하루 DAILY_LIMIT 번. 질문 내용은 저장하지 않는다.
 export const maxDuration = 60;
@@ -11,7 +12,7 @@ const MAX_CHARS = 2000;
 type Turn = { role: "user" | "assistant"; content: string };
 
 export async function POST(req: Request) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!AI_ENABLED || !process.env.ANTHROPIC_API_KEY) {
     return Response.json({ error: "AI 도우미를 준비하고 있어요. 조금만 기다려 주세요." }, { status: 503 });
   }
 

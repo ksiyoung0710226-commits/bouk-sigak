@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AI_ENABLED } from "@/lib/features";
 
 const cards = [
   { href: "/curriculum", t: "표준보육과정 · 누리과정", d: "주기마다 바뀌는 표준보육과정과 누리과정을 한눈에 정리해요.", e: "📚" },
@@ -32,7 +33,7 @@ export default function Home() {
         </div>
       </section>
       <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((c) => (
+        {cards.filter((c) => AI_ENABLED || c.href !== "/ask").map((c) => (
           <Link key={c.href} href={c.href} className="card p-6">
             <div className="text-3xl">{c.e}</div>
             <h2 className="mt-3 text-lg font-bold">{c.t}</h2>
