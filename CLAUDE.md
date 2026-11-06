@@ -18,7 +18,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 글 수정(021): 작성자 본인만 category/title/body 수정(column grant + RLS, 정지 중 불가), posts.updated_at 트리거 → '(수정됨)' 표시.
 - 이름: 홈 소개 문구 '유아교육과, 아동보육과, 교사들을 위한 페이지 / 함께 배우고 나누는 페이지입니다.', 메뉴 '아동 필수 지식', '표준보육과정 · 누리과정', '관련 뉴스'(아동보육·유치원 두 검색을 각 25건씩 섞어 주제 배지 표시).
 - `src/lib/knowledge/*.ts` : 아동 필수 지식 14개 과목, 197개 단원 본문(Subject → Unit → Section). 타입은 types.ts. 모든 단원에 keywords 필수. 2026-11-06 유아교육 과목 5개 추가(ece-intro 유아교육개론, play-guidance 놀이지도, language-literature 언어교육·아동문학, math-science 수학·과학교육, parent-education 부모교육 — 보육교사 자격 교과목 목록(한국보육진흥원)과도 대응). 첫 화면은 `subjectGroups`(index.ts: 발달/보육/유아교육/관찰·평가/가족·부모)로 묶고, `KnowledgeSearch`가 `searchIndex`(제목·요약·키워드·소제목)로 검색. **새 과목은 subjectGroups에도 넣을 것.**
-- `/prospective` 예비 재학생을 위한 질문 모음집: 내용은 `src/lib/prospective-faq.ts`(숫자 없이, 공식 확인 링크). Q&A 분류에 '예비 재학생' 추가.
+- `/prospective` 예비 재학생을 위한 질문 모음집: 내용은 `src/lib/prospective-faq.ts`(대부분 숫자 없이 공식 확인 링크. 단 "대학 말고도 자격증" 묶음은 2026-11-06 공식 페이지(chrd.childcare.go.kr, cb.or.kr, 유아교육법 별표2)에서 확인한 숫자만 인용 — 기준 바뀌면 같이 수정). Q&A 분류에 '예비 재학생' 추가.
 - `src/lib/knowledge/sources.ts` : 과목별 출처(고시문·해설서 / 법령 / 공식 기관 / 학술 원전). 링크는 열리는 것만 넣을 것.
 - `src/lib/curriculum.ts` : 교육부 고시문(제2024-23호) 원문에서 그대로 옮긴 보육과정 내용범주·내용. 문구를 임의로 바꾸지 말 것.
 - `src/app/knowledge/[subject]/[unit]` : 과목 → 단원 화면.
