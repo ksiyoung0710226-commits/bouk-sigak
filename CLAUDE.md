@@ -73,5 +73,6 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 5. (선택) 다른 페이지 제목도 로고와 같은 부드러운 글꼴로 맞출지 사용자에게 확인.
 
 ## 작업 환경 메모
+- **수정할 때마다 바로 커밋 + `git push`** (사용자 요청, 2026-11-06). push = Vercel 자동 배포이므로 `npx tsc --noEmit` 통과한 단위로만 올릴 것.
 - node/npx는 PATH에 없음: 명령 앞에 `export PATH=~/.local/node22/bin:$PATH` 를 붙일 것.
 - 원래 개발 컴퓨터는 macOS 12라 Playwright 미지원. 화면 캡처는 Chrome for Testing 138 로 했음. 새 컴퓨터에서는 필요 없으면 생략.
