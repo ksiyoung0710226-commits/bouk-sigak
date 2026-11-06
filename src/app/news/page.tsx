@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import PageTitle from "@/components/PageTitle";
 import { getNews } from "@/lib/news";
 
-export const metadata = { title: "보육 뉴스 | educare insight" };
+export const metadata = { title: "관련 뉴스 | educare insight" };
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -18,7 +18,7 @@ async function NewsList() {
         {items.map((n) => (
           <li key={n.link}>
             <a href={n.link} target="_blank" rel="noopener noreferrer" className="block p-4 hover:bg-soft">
-              <p className="font-medium">{n.title}</p>
+              <p className="font-medium"><span className={`mr-1.5 rounded-full border border-ink px-2 py-0.5 align-middle text-xs font-bold ${n.topic === "유치원" ? "bg-[#a8dcff]" : "bg-lime"}`}>{n.topic}</span>{n.title}</p>
               <p className="mt-1 text-xs text-foreground/60">{n.source} · {fmt(n.publishedAt)} ↗</p>
             </a>
           </li>
@@ -32,8 +32,8 @@ export default function NewsPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <PageTitle
-        title="보육 뉴스"
-        desc="구글 뉴스에 올라온 보육·어린이집·보육교사 관련 최신 기사를 모아 보여 줘요. 몇 분마다 자동으로 새 기사가 반영돼요."
+        title="관련 뉴스"
+        desc="구글 뉴스에 올라온 아동보육(어린이집)과 유아교육(유치원) 관련 최신 기사를 함께 모아 보여 줘요. 몇 분마다 자동으로 새 기사가 반영돼요."
       />
       <p className="mb-6 note p-3 text-sm">
         제목을 누르면 기사 원문(언론사 사이트)이 새 창으로 열려요. 기사 내용은 각 언론사의 것이며, educare insight가 내용을 확인하거나 보증하지 않아요.

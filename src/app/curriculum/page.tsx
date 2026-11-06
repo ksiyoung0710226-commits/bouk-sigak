@@ -5,7 +5,7 @@ import References from "@/components/References";
 import { editions, currentEditionIds } from "@/lib/curriculum-history";
 import { curriculumPageSources } from "@/lib/knowledge/sources";
 
-export const metadata = { title: "보육과정 | educare insight" };
+export const metadata = { title: "표준보육과정 · 누리과정 | educare insight" };
 
 // 오늘 날짜(한국 시간) 기준으로 '현재 적용 중'인 과정을 고른다. 1시간마다 다시 계산.
 async function todayKST() {
@@ -19,7 +19,7 @@ export default async function Curriculum() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <PageTitle
-        title="보육과정"
+        title="표준보육과정 · 누리과정"
         desc="지금까지 나온 표준보육과정과 누리과정을 한곳에 모았어요. 현재 적용 중인 과정은 고시문 원문을, 지난 과정은 요약을 볼 수 있어요."
       />
       <CurriculumTabs editions={editions} currentIds={currentEditionIds(today)} />

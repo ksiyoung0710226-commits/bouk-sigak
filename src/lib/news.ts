@@ -1,10 +1,15 @@
 import { cacheLife } from "next/cache";
 
-export type NewsItem = { title: string; link: string; source: string; publishedAt: string };
+export type NewsItem = { title: string; link: string; source: string; publishedAt: string; topic: string };
 
 // 구글 뉴스 RSS 검색 결과(제목·언론사·날짜·링크만 사용, 기사 본문은 가져오지 않음)
-const QUERY = "(보육 OR 어린이집 OR 보육교사 OR 영유아) when:7d";
-const FEED = `https://news.google.com/rss/search?q=${encodeURIComponent(QUERY)}&hl=ko&gl=KR&ceid=KR:ko`;
+// 아동보육(어린이집)과 유아교육(유치원) 소식이 모두 나오도록 따로 가져와 섞는다.
+const TOPICS = [
+  { topic: "아동보육", query: "(보육 OR 어린이집 OR 보육교사 OR 영유아) when:7d" },
+  { topic: "유치원", query: "(유치원 OR 유아교육 OR 유치원교사 OR 누리과정) when:7d" },
+];
+const feedUrl = (q: string) => `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=ko&gl=KR&ceid=KR:ko`;
+const PER_TOPIC = 25;
 
 const decode = (s: string) =>
   s
@@ -23,12 +28,16 @@ export async function getNews(): Promise<{ items: NewsItem[]; fetchedAt: string;
   // 5분마다 새로 가져옴(방문자가 있을 때 뒤에서 갱신)
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 });
   const fetchedAt = new Date().toISOString();
+  const seen = new Set<string>();
+  const items: NewsItem[] = [];
+  let okCount = 0;
+  for (const { topic, query } of TOPICS) {
   try {
-    const res = await fetch(FEED, { headers: { "User-Agent": "Mozilla/5.0 (educare-insight news)" } });
-    if (!res.ok) return { items: [], fetchedAt, ok: false };
+    const res = await fetch(feedUrl(query), { headers: { "User-Agent": "Mozilla/5.0 (educare-insight news)" } });
+    if (!res.ok) continue;
+    okCount++;
     const xml = await res.text();
-    const seen = new Set<string>();
-    const items: NewsItem[] = [];
+    const mine: NewsItem[] = [];
     for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
       const it = m[1];
       const source = tag(it, "source");
@@ -40,11 +49,14 @@ export async function getNews(): Promise<{ items: NewsItem[]; fetchedAt: string;
       if (!title || !link.startsWith("https://news.google.com/") || isNaN(date.getTime())) continue;
       if (seen.has(title)) continue;
       seen.add(title);
-      items.push({ title, link, source: source || "언론사 미상", publishedAt: date.toISOString() });
+      mine.push({ title, link, source: source || "언론사 미상", publishedAt: date.toISOString(), topic });
     }
-    items.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
-    return { items: items.slice(0, 40), fetchedAt, ok: true };
+    mine.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+    items.push(...mine.slice(0, PER_TOPIC));
   } catch {
-    return { items: [], fetchedAt, ok: false };
+    // 한쪽이 실패해도 다른 쪽 뉴스는 보여 준다
   }
+  }
+  items.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  return { items, fetchedAt, ok: okCount > 0 };
 }
