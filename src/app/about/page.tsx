@@ -1,11 +1,11 @@
 import Link from "next/link";
 import PageTitle from "@/components/PageTitle";
 
-export const metadata = { title: "보육시각이란? | 보육시각" };
+export const metadata = { title: "educare insight란? | educare insight" };
 
 const features = [
   { href: "/curriculum", e: "📚", t: "보육과정", d: "교육부 고시문을 바탕으로 표준보육과정과 누리과정의 영역·내용을 정리했어요." },
-  { href: "/knowledge", e: "🧠", t: "아동보육 필수지식", d: "발달이론, 영유아 발달, 관찰, 건강·안전 등 아동보육과에서 꼭 알아야 할 기본 지식을 과목별로 모았어요." },
+  { href: "/knowledge", e: "🧠", t: "아동 필수 지식", d: "발달이론, 영유아 발달, 관찰, 건강·안전 등 아동보육과에서 꼭 알아야 할 기본 지식을 과목별로 모았어요." },
   { href: "/community", e: "💬", t: "커뮤니티", d: "재학생과 현장 교사가 고민을 나누고, 조언하고, 서로 응원하는 공간이에요." },
   { href: "/qna", e: "🙋", t: "Q&A", d: "실습·수업·현장에 대해 묻고 답해요. 인증된 현장 교사의 답변에는 표시가 붙어요." },
   { href: "/news", e: "📰", t: "보육 뉴스", d: "구글 뉴스에 올라온 최신 보육 소식을 자동으로 모아 보여 줘요." },
@@ -15,10 +15,10 @@ const features = [
 export default function About() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <PageTitle title="보육시각이란?" />
+      <PageTitle title="educare insight란?" />
       <section className="panel-lav space-y-3 p-6 text-base leading-relaxed">
         <p>
-          <b>보육시각</b>은 <span className="hl font-bold">아동보육과 재학생과 현장 보육교사가 함께 배우고 나누는 공간</span>이에요.
+          <b>educare insight</b>는 <span className="hl font-bold">유아교육과, 아동보육과, 교사들을 위한 페이지</span>예요. 함께 배우고 나누는 페이지입니다.
         </p>
         <p>
           학교에서 배우는 보육과정과 기본 이론을 한곳에서 찾아보고, 현장에 있는 선배 교사들과 고민과 경험을 나눌 수 있도록 만들었어요.

@@ -24,7 +24,7 @@ export async function getNews(): Promise<{ items: NewsItem[]; fetchedAt: string;
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 });
   const fetchedAt = new Date().toISOString();
   try {
-    const res = await fetch(FEED, { headers: { "User-Agent": "Mozilla/5.0 (boyuk-insight news)" } });
+    const res = await fetch(FEED, { headers: { "User-Agent": "Mozilla/5.0 (educare-insight news)" } });
     if (!res.ok) return { items: [], fetchedAt, ok: false };
     const xml = await res.text();
     const seen = new Set<string>();

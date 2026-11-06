@@ -24,11 +24,11 @@ export function reportMail(nickname: string, action: string, targetType: string 
   const what = targetWord(targetType);
   const label = actionLabel(action) + (alsoDeleted && canAlsoDelete(action) ? " 및 게시물 삭제" : "");
   return {
-    subject: "[보육시각] 신고 처리가 완료되었습니다",
+    subject: "[educare insight] 신고 처리가 완료되었습니다",
     lines: [
       `${nickname}님의 신고 처리가 완료되었습니다.`,
       `신고하신 ${what}에 대해 '${label}' 처분을 내렸습니다.`,
-      "보육시각을 이용해주셔서 감사합니다.",
+      "educare insight를 이용해주셔서 감사합니다.",
     ],
   };
 }

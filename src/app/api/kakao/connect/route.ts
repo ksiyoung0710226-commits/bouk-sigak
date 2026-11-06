@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   if (body.test) {
     try {
-      await sendKakaoToMe("🔔 보육시각 시험 알림이에요. 잘 받으셨다면 연결이 정상이에요!", "/profile");
+      await sendKakaoToMe("🔔 educare insight 시험 알림이에요. 잘 받으셨다면 연결이 정상이에요!", "/profile");
       return Response.json({ ok: true });
     } catch (e) {
       return Response.json({ error: `보내지 못했어요: ${(e as Error).message}` }, { status: 502 });

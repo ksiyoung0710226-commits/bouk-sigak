@@ -1,7 +1,7 @@
 import PageTitle from "@/components/PageTitle";
 import { Article, CONTACT_EMAIL, LegalFooter } from "@/components/LegalDoc";
 
-export const metadata = { title: "개인정보 처리방침 | 보육시각" };
+export const metadata = { title: "개인정보 처리방침 | educare insight" };
 
 const th = "border border-line bg-lav/40 px-2 py-1.5 text-left align-top";
 const td = "border border-line px-2 py-1.5 align-top";
@@ -9,9 +9,9 @@ const td = "border border-line px-2 py-1.5 align-top";
 export default function Privacy() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <PageTitle title="개인정보 처리방침" desc="보육시각이 어떤 정보를, 왜, 얼마나 보관하는지 알려 드려요." />
+      <PageTitle title="개인정보 처리방침" desc="educare insight가 어떤 정보를, 왜, 얼마나 보관하는지 알려 드려요." />
       <div className="card space-y-7 p-6 sm:p-8">
-        <p className="text-[15px] leading-relaxed">보육시각(이하 ‘사이트’)은 「개인정보 보호법」에 따라 회원의 개인정보를 보호하고, 관련 고충을 신속하게 처리하기 위해 다음과 같이 처리방침을 둡니다.</p>
+        <p className="text-[15px] leading-relaxed">educare insight(이하 ‘사이트’)는 「개인정보 보호법」에 따라 회원의 개인정보를 보호하고, 관련 고충을 신속하게 처리하기 위해 다음과 같이 처리방침을 둡니다.</p>
 
         <Article n={1} title="수집하는 개인정보와 목적">
           <div className="overflow-x-auto">
@@ -79,7 +79,7 @@ export default function Privacy() {
         </Article>
 
         <Article n={9} title="개인정보 보호책임자와 문의">
-          <p>개인정보 보호책임자: 보육시각 운영자 · 이메일 {CONTACT_EMAIL} · 사이트 ‘💌 문의하기’</p>
+          <p>개인정보 보호책임자: educare insight 운영자 · 이메일 {CONTACT_EMAIL} · 사이트 ‘💌 문의하기’</p>
           <p>개인정보 침해에 대한 상담은 개인정보침해신고센터(국번 없이 118, privacy.kisa.or.kr), 개인정보분쟁조정위원회(1833-6972, kopico.go.kr)에도 할 수 있습니다.</p>
         </Article>
 

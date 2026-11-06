@@ -5,7 +5,7 @@ import References from "@/components/References";
 import { editions, currentEditionIds } from "@/lib/curriculum-history";
 import { curriculumPageSources } from "@/lib/knowledge/sources";
 
-export const metadata = { title: "보육과정 | 보육시각" };
+export const metadata = { title: "보육과정 | educare insight" };
 
 // 오늘 날짜(한국 시간) 기준으로 '현재 적용 중'인 과정을 고른다. 1시간마다 다시 계산.
 async function todayKST() {

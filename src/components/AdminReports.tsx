@@ -45,7 +45,7 @@ function suspendText(until: string | null) {
 // 신고된 회원에게 보내는 1:1 메시지(경고·삭제·정지 때)
 function targetMessage(action: string, alsoDelete: boolean, what: string) {
   const label = actionLabel(action) + (alsoDelete && canAlsoDelete(action) ? " 및 게시물 삭제" : "");
-  return `회원님이 작성한 ${what}이(가) 신고되어 운영진이 확인했습니다.\n\n처분: ${label}\n\n보육시각은 서로 존중하는 공간을 위해 운영 규칙(이용약관)을 지키도록 안내하고 있어요. 처분에 대해 궁금한 점이 있으면 이 메시지에 답장해 주세요.`;
+  return `회원님이 작성한 ${what}이(가) 신고되어 운영진이 확인했습니다.\n\n처분: ${label}\n\neducare insight는 서로 존중하는 공간을 위해 운영 규칙(이용약관)을 지키도록 안내하고 있어요. 처분에 대해 궁금한 점이 있으면 이 메시지에 답장해 주세요.`;
 }
 
 function ResolveBox({ r, onDone }: { r: Report; onDone: (msg: string) => void }) {

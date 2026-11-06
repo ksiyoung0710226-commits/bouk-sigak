@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   if (!code) return back("denied");
   try {
     await connectWithCode(code);
-    await sendKakaoToMe("🌱 보육시각 알림이 연결되었어요!\n새 회원가입·문의·신고가 들어오면 여기로 알려 드릴게요.", "/profile");
+    await sendKakaoToMe("🌱 educare insight 알림이 연결되었어요!\n새 회원가입·문의·신고가 들어오면 여기로 알려 드릴게요.", "/profile");
     return back("ok");
   } catch (e) {
     console.error("kakao connect", e);

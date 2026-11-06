@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const cards = [
   { href: "/curriculum", t: "보육과정", d: "주기마다 바뀌는 보육과정을 한눈에 정리해요.", e: "📚" },
-  { href: "/knowledge", t: "아동보육 필수지식", d: "영유아 발달, 보육과정, 아동건강교육 등 9개 과목 144개 단원의 기본 지식.", e: "🧠" },
+  { href: "/knowledge", t: "아동 필수 지식", d: "영유아 발달, 보육과정, 아동건강교육 등 9개 과목 144개 단원의 기본 지식.", e: "🧠" },
   { href: "/community", t: "커뮤니티", d: "고민, 조언, 응원을 나누는 재학생·교사 공간.", e: "💬" },
   { href: "/qna", t: "Q&A", d: "재학생이 묻고 현장 교사가 답하는 질문·답변 공간.", e: "🙋" },
   { href: "/news", t: "보육 뉴스", d: "구글 뉴스에 올라온 최신 보육 소식을 모아 봐요.", e: "📰" },
@@ -12,19 +12,19 @@ export default function Home() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <section className="panel-lav p-10 text-center shadow-[5px_5px_0_var(--ink)]">
-        <h1 className="logo-font flex items-center justify-center gap-2 text-6xl sm:text-7xl">
-          보육시각
+        <h1 className="logo-font flex flex-wrap items-center justify-center gap-2 text-5xl sm:text-7xl">
+          educare insight
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/mascot.svg" alt="" aria-hidden width={56} height={56} className="h-12 w-12 sm:h-14 sm:w-14" />
         </h1>
         <p className="mt-4 text-lg">
-          아동보육과 재학생과 현장 보육교사가
+          유아교육과, 아동보육과, 교사들을 위한 페이지
           <br />
-          <span className="hl font-bold">함께 배우고 나누는 공간</span>입니다.
+          <span className="hl font-bold">함께 배우고 나누는 페이지</span>입니다.
         </p>
         <div className="mt-6 flex justify-center">
           <Link href="/about" className="rounded-full border-2 border-ink bg-sun px-6 py-2 font-bold text-ink shadow-[3px_3px_0_var(--ink)] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_var(--ink)]">
-            보육시각이란?
+            educare insight란?
           </Link>
         </div>
       </section>

@@ -1,6 +1,6 @@
 #!/bin/zsh
 # 메일 서버(Gmail SMTP) 연결: .env.local 의 SMTP_USER, SMTP_PASS 를 읽어
-#  1) Supabase 로그인 메일(가입 인증·비밀번호 재설정 등)을 '보육시각' 이름 + 한글 제목/본문으로 보내게 설정
+#  1) Supabase 로그인 메일(가입 인증·비밀번호 재설정 등)을 'educare insight' 이름 + 한글 제목/본문으로 보내게 설정
 #  2) Vercel 에 SMTP_USER/SMTP_PASS 등록(신고 처리 안내 메일용)
 # 비밀번호는 화면에 출력하지 않는다.
 set -e
@@ -19,17 +19,19 @@ t = lambda f: open(f"supabase/templates/{f}.html", encoding="utf-8").read()
 print(json.dumps({
   "smtp_host": "smtp.gmail.com", "smtp_port": "465",
   "smtp_user": os.environ["SMTP_USER"], "smtp_pass": os.environ["SMTP_PASS"],
-  "smtp_admin_email": os.environ["SMTP_USER"], "smtp_sender_name": "보육시각",
+  "smtp_admin_email": os.environ["SMTP_USER"], "smtp_sender_name": "educare insight",
+  "site_url": "https://educare-insight.vercel.app",
+  "uri_allow_list": "https://educare-insight.vercel.app/**,https://boyuk-insight.vercel.app/**,https://bouk-sigak.vercel.app/**,http://localhost:3000/**",
   "rate_limit_email_sent": 30,
-  "mailer_subjects_confirmation": "[보육시각] 이메일 인증을 완료해 주세요",
+  "mailer_subjects_confirmation": "[educare insight] 이메일 인증을 완료해 주세요",
   "mailer_templates_confirmation_content": t("confirmation"),
-  "mailer_subjects_recovery": "[보육시각] 비밀번호 재설정 안내",
+  "mailer_subjects_recovery": "[educare insight] 비밀번호 재설정 안내",
   "mailer_templates_recovery_content": t("recovery"),
-  "mailer_subjects_email_change": "[보육시각] 이메일 변경 확인",
+  "mailer_subjects_email_change": "[educare insight] 이메일 변경 확인",
   "mailer_templates_email_change_content": t("email_change"),
-  "mailer_subjects_magic_link": "[보육시각] 로그인 링크",
+  "mailer_subjects_magic_link": "[educare insight] 로그인 링크",
   "mailer_templates_magic_link_content": t("magic_link"),
-  "mailer_subjects_reauthentication": "[보육시각] 본인 확인 코드",
+  "mailer_subjects_reauthentication": "[educare insight] 본인 확인 코드",
   "mailer_templates_reauthentication_content": t("reauthentication"),
 }, ensure_ascii=False))
 PY

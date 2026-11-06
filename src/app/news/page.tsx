@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import PageTitle from "@/components/PageTitle";
 import { getNews } from "@/lib/news";
 
-export const metadata = { title: "보육 뉴스 | 보육시각" };
+export const metadata = { title: "보육 뉴스 | educare insight" };
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -36,7 +36,7 @@ export default function NewsPage() {
         desc="구글 뉴스에 올라온 보육·어린이집·보육교사 관련 최신 기사를 모아 보여 줘요. 몇 분마다 자동으로 새 기사가 반영돼요."
       />
       <p className="mb-6 note p-3 text-sm">
-        제목을 누르면 기사 원문(언론사 사이트)이 새 창으로 열려요. 기사 내용은 각 언론사의 것이며, 보육시각이 내용을 확인하거나 보증하지 않아요.
+        제목을 누르면 기사 원문(언론사 사이트)이 새 창으로 열려요. 기사 내용은 각 언론사의 것이며, educare insight가 내용을 확인하거나 보증하지 않아요.
       </p>
       <Suspense fallback={<p className="text-foreground/60">뉴스를 불러오는 중…</p>}>
         <NewsList />

@@ -16,7 +16,7 @@ type Winner = { id: number; event_id: number; user_id: string; code: string; mes
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
 const when = (s: string) => new Date(s).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
 const kindLabel = (k?: string) => (k === "teacher" ? "현장교사" : "재학생");
-const DEFAULT_MSG = "{닉네임} 님, 축하드려요! 🎉\n보육시각 회원 추첨에 당첨되셨어요.\n\n쿠폰 번호: {쿠폰번호}\n\n상품을 받으실 방법을 이 메시지에 답장으로 알려 주세요.";
+const DEFAULT_MSG = "{닉네임} 님, 축하드려요! 🎉\neducare insight 회원 추첨에 당첨되셨어요.\n\n쿠폰 번호: {쿠폰번호}\n\n상품을 받으실 방법을 이 메시지에 답장으로 알려 주세요.";
 
 function WinnerList({ winners }: { winners: Winner[] }) {
   return (
@@ -32,7 +32,7 @@ function WinnerList({ winners }: { winners: Winner[] }) {
 }
 
 function SendBox({ ev, winners, onSent }: { ev: Event; winners: Winner[]; onSent: () => void }) {
-  const [title, setTitle] = useState("🎁 보육시각 회원 추첨 당첨 안내");
+  const [title, setTitle] = useState("🎁 educare insight 회원 추첨 당첨 안내");
   const [body, setBody] = useState(DEFAULT_MSG);
   const [busy, setBusy] = useState(false);
   const left = winners.filter((w) => !w.messaged).length;

@@ -18,9 +18,9 @@ const jua = Jua({
 });
 
 export const metadata: Metadata = {
-  title: "보육시각 | 아동보육 학생과 교사를 위한 공간",
+  title: "educare insight | 유아교육과, 아동보육과, 교사들을 위한 페이지",
   description:
-    "보육과정 안내, 발달이론 등 아동보육 필수지식, 그리고 재학생과 현장 교사가 함께 나누는 커뮤니티.",
+    "보육과정 안내, 발달이론 등 아동 필수 지식, 그리고 재학생과 현장 교사가 함께 나누는 커뮤니티.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

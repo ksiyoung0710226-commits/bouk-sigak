@@ -67,12 +67,12 @@ export default function SignupForm() {
   if (done)
     return (
       <div className="card p-8 text-center">
-        <p className="text-lg font-bold">📧 보육시각 이메일 인증 메일을 보냈어요</p>
+        <p className="text-lg font-bold">📧 educare insight 이메일 인증 메일을 보냈어요</p>
         <p className="mt-2 text-sm text-foreground/70">
           {email} 의 메일함에서 인증 링크를 눌러 가입을 마무리해 주세요.
         </p>
         <p className="mt-3 note p-3 text-xs text-foreground/70">
-          보낸 사람이 <b>Supabase Auth</b>로 보일 수 있어요. 보육시각 가입 인증 메일이 맞으니 안심하세요.
+          보낸 사람이 <b>Supabase Auth</b>로 보일 수 있어요. educare insight 가입 인증 메일이 맞으니 안심하세요.
           메일이 안 보이면 스팸함도 확인해 주세요.
         </p>
         <Link href="/login" className="mt-5 inline-block rounded-full bg-brand px-6 py-2 font-medium text-white">로그인하러 가기</Link>

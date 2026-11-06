@@ -30,7 +30,7 @@ export default function ForgotPassword() {
       {sent ? (
         <div className="card space-y-3 p-6 text-sm">
           <p className="font-bold">📧 메일을 보냈어요.</p>
-          <p>가입된 이메일이라면 몇 분 안에 ‘보육시각’ 메일이 도착해요. 메일의 버튼을 눌러 새 비밀번호를 정해 주세요. 메일이 안 보이면 스팸함도 확인해 주세요.</p>
+          <p>가입된 이메일이라면 몇 분 안에 ‘educare insight’ 메일이 도착해요. 메일의 버튼을 눌러 새 비밀번호를 정해 주세요. 메일이 안 보이면 스팸함도 확인해 주세요.</p>
           <Link href="/login" className="inline-block underline">로그인으로 돌아가기</Link>
         </div>
       ) : (

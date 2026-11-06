@@ -4,7 +4,7 @@ import { anonClient } from "./supa";
 // 카카오톡 '나에게 보내기'로 관리자에게 알림을 보낸다.
 // 환경 변수: KAKAO_REST_KEY(REST API 키), KAKAO_CLIENT_SECRET(선택), NOTIFY_SECRET
 // 토큰은 DB app_secrets 에 저장되고, NOTIFY_SECRET 을 아는 서버만 읽고 쓸 수 있다.
-export const SITE = "https://boyuk-insight.vercel.app";
+export const SITE = "https://educare-insight.vercel.app";
 export const REDIRECT_URI = `${SITE}/api/kakao/callback`;
 const secret = () => process.env.NOTIFY_SECRET ?? "";
 
@@ -87,7 +87,7 @@ export async function sendKakaoToMe(text: string, path = "/") {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/x-www-form-urlencoded;charset=utf-8" },
     body: new URLSearchParams({
-      template_object: JSON.stringify({ object_type: "text", text: text.slice(0, 200), link, button_title: "보육시각에서 보기" }),
+      template_object: JSON.stringify({ object_type: "text", text: text.slice(0, 200), link, button_title: "educare insight에서 보기" }),
     }),
   });
   if (!res.ok) throw new Error(`kakao send ${res.status}: ${await res.text()}`);

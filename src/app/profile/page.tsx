@@ -286,7 +286,7 @@ function DeleteSection() {
     }
     await supabase.auth.signOut({ scope: "local" });
     localStorage.removeItem(SAVED_EMAIL_KEY);
-    alert("탈퇴가 완료되었어요. 그동안 보육시각을 이용해 주셔서 감사합니다.");
+    alert("탈퇴가 완료되었어요. 그동안 educare insight를 이용해 주셔서 감사합니다.");
     window.location.href = "/";
   }
 

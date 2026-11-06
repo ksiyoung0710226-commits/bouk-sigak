@@ -1,7 +1,7 @@
 import { kakaoReady, sameSecret, sendKakaoToMe } from "@/lib/server/kakao";
 import { mailReady, sendMail } from "@/lib/server/mail";
 
-const SITE = "https://boyuk-insight.vercel.app";
+const SITE = "https://educare-insight.vercel.app";
 
 // DB 트리거(pg_net)가 부르는 알림 주소. NOTIFY_SECRET 을 아는 쪽(DB)만 부를 수 있다.
 // body: { text, path }
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     }
     const to = process.env.NOTIFY_EMAIL || process.env.SMTP_USER;
     if (!mailReady() || !to) return Response.json({ ok: false, error: "no channel configured" });
-    const subject = `[보육시각 알림] ${text.split("\n")[0].slice(0, 60)}`;
+    const subject = `[educare insight 알림] ${text.split("\n")[0].slice(0, 60)}`;
     await sendMail(to, subject, [...text.split("\n").filter(Boolean), `바로 가기: ${SITE}${safePath}`]);
     return Response.json({ ok: true, via: "mail" });
   } catch (e) {

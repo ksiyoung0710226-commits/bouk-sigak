@@ -37,7 +37,7 @@ export default function Login() {
     if (error) {
       const notConfirmed = error.message.includes("not confirmed");
       setUnconfirmed(notConfirmed);
-      setError(notConfirmed ? "이메일 인증을 먼저 완료해 주세요. 메일함(스팸함 포함)에서 ‘보육시각’ 인증 메일을 찾아 주세요." : "이메일 또는 비밀번호가 맞지 않아요.");
+      setError(notConfirmed ? "이메일 인증을 먼저 완료해 주세요. 메일함(스팸함 포함)에서 ‘educare insight’ 인증 메일을 찾아 주세요." : "이메일 또는 비밀번호가 맞지 않아요.");
       return;
     }
     if (saveEmail) localStorage.setItem(SAVED_EMAIL_KEY, email.trim());

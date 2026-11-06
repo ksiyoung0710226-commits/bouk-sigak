@@ -11,7 +11,7 @@ export function generateStaticParams() {
 export async function generateMetadata(props: PageProps<"/knowledge/[subject]">) {
   const { subject } = await props.params;
   const s = getSubject(subject);
-  return { title: s ? `${s.title} | 보육시각` : "보육시각" };
+  return { title: s ? `${s.title} | educare insight` : "educare insight" };
 }
 
 export default async function SubjectPage(props: PageProps<"/knowledge/[subject]">) {
@@ -21,7 +21,7 @@ export default async function SubjectPage(props: PageProps<"/knowledge/[subject]
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <Link href="/knowledge" className="text-sm text-brand-dark hover:underline">← 필수지식 전체 과목</Link>
+      <Link href="/knowledge" className="text-sm text-brand-dark hover:underline">← 아동 필수 지식 전체 과목</Link>
       <div className="mt-3">
         <PageTitle title={`${s.emoji} ${s.title}`} desc={s.summary} />
       </div>

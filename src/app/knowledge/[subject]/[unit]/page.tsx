@@ -10,7 +10,7 @@ export function generateStaticParams() {
 export async function generateMetadata(props: PageProps<"/knowledge/[subject]/[unit]">) {
   const { subject, unit } = await props.params;
   const u = getUnit(subject, unit);
-  return { title: u ? `${u.title} | 보육시각` : "보육시각" };
+  return { title: u ? `${u.title} | educare insight` : "educare insight" };
 }
 
 export default async function UnitPage(props: PageProps<"/knowledge/[subject]/[unit]">) {
@@ -26,7 +26,7 @@ export default async function UnitPage(props: PageProps<"/knowledge/[subject]/[u
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <nav className="text-sm text-brand-dark">
-        <Link href="/knowledge" className="hover:underline">필수지식</Link>
+        <Link href="/knowledge" className="hover:underline">아동 필수 지식</Link>
         {" › "}
         <Link href={`/knowledge/${s.slug}`} className="hover:underline">{s.title}</Link>
       </nav>

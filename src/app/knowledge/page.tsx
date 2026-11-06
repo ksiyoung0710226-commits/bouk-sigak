@@ -2,13 +2,13 @@ import Link from "next/link";
 import PageTitle from "@/components/PageTitle";
 import { subjects } from "@/lib/knowledge";
 
-export const metadata = { title: "아동보육 필수지식 | 보육시각" };
+export const metadata = { title: "아동 필수 지식 | educare insight" };
 
 export default function Knowledge() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <PageTitle
-        title="아동보육 필수지식"
+        title="아동 필수 지식"
         desc="과목을 고르면 단원 목록이 나오고, 단원을 누르면 자세한 내용이 열려요."
       />
       <p className="-mt-4 mb-8 text-base font-bold">

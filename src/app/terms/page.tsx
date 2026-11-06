@@ -2,15 +2,15 @@ import Link from "next/link";
 import PageTitle from "@/components/PageTitle";
 import { Article, LegalFooter } from "@/components/LegalDoc";
 
-export const metadata = { title: "이용약관 | 보육시각" };
+export const metadata = { title: "이용약관 | educare insight" };
 
 export default function Terms() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <PageTitle title="이용약관" desc="보육시각을 이용할 때 지켜 주셨으면 하는 약속이에요." />
+      <PageTitle title="이용약관" desc="educare insight를 이용할 때 지켜 주셨으면 하는 약속이에요." />
       <div className="card space-y-7 p-6 sm:p-8">
         <Article n={1} title="목적">
-          <p>이 약관은 보육시각(이하 ‘사이트’)이 제공하는 학습 자료, 커뮤니티, Q&A, 1:1 채팅·문의 등 서비스의 이용 조건과 절차, 회원과 운영자의 권리·의무를 정합니다.</p>
+          <p>이 약관은 educare insight(이하 ‘사이트’)이 제공하는 학습 자료, 커뮤니티, Q&A, 1:1 채팅·문의 등 서비스의 이용 조건과 절차, 회원과 운영자의 권리·의무를 정합니다.</p>
         </Article>
         <Article n={2} title="회원 가입">
           <ol className="list-decimal space-y-1 pl-5">
@@ -48,7 +48,7 @@ export default function Terms() {
           </ol>
         </Article>
         <Article n={6} title="학습 자료의 성격">
-          <p>‘아동보육 필수지식’, ‘보육과정’ 등 학습 자료는 공식 자료와 전공 서적을 바탕으로 정리한 <b>학습 참고용</b>입니다. 법령·지침은 바뀔 수 있으므로 실제 업무나 시험에는 최신 법령, 기관 지침, 교재를 함께 확인해 주세요. 회원이 쓴 게시물·답변은 작성자 개인의 의견입니다.</p>
+          <p>‘아동 필수 지식’, ‘보육과정’ 등 학습 자료는 공식 자료와 전공 서적을 바탕으로 정리한 <b>학습 참고용</b>입니다. 법령·지침은 바뀔 수 있으므로 실제 업무나 시험에는 최신 법령, 기관 지침, 교재를 함께 확인해 주세요. 회원이 쓴 게시물·답변은 작성자 개인의 의견입니다.</p>
         </Article>
         <Article n={7} title="서비스의 변경과 중단">
           <p>사이트는 개인이 운영하는 비영리 서비스로, 운영상 필요하거나 부득이한 사정이 있으면 서비스 내용을 바꾸거나 중단할 수 있습니다. 중요한 변경은 사이트에 미리 알립니다.</p>

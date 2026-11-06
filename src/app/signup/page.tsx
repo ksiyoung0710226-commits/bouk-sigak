@@ -1,7 +1,7 @@
 import PageTitle from "@/components/PageTitle";
 import SignupForm from "@/components/SignupForm";
 
-export const metadata = { title: "회원가입 | 보육시각" };
+export const metadata = { title: "회원가입 | educare insight" };
 
 export default function Signup() {
   return (
