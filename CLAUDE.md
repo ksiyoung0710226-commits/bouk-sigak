@@ -14,6 +14,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 
 ## 구조
 - 회원 유형(022): profiles.kind = student(재학생) | prospective(예비 재학생, 추가 정보 없음) | teacher. 교사는 profiles.teacher_org = 어린이집 | 유치원 **필수**, 닉네임 옆 배지로 항상 표시(공개 설정 무관). 기관 종류: 어린이집 = CENTER_TYPES, 유치원 = 국립·공립·사립·기타(KINDERGARTEN_TYPES). 표시 문구는 `kindLabel`(member-info.ts). 관리자 목록에서 예비 재학생은 재학생 칸에 함께.
+- 환영 메일(023): auth.users 이메일 인증 완료(또는 인증 없이 가입) 트리거 → pg_net → `POST /api/welcome`(x-notify-secret) → Gmail '회원가입이 완료되었습니다. 환영합니다 {닉네임}님!'.
 - 글 수정(021): 작성자 본인만 category/title/body 수정(column grant + RLS, 정지 중 불가), posts.updated_at 트리거 → '(수정됨)' 표시.
 - 이름: 홈 소개 문구 '유아교육과, 아동보육과, 교사들을 위한 페이지 / 함께 배우고 나누는 페이지입니다.', 메뉴 '아동 필수 지식', '표준보육과정 · 누리과정', '관련 뉴스'(아동보육·유치원 두 검색을 각 25건씩 섞어 주제 배지 표시).
 - `src/lib/knowledge/*.ts` : 필수지식 9개 과목, 144개 단원 본문(Subject → Unit → Section). 타입은 types.ts. 모든 단원에 keywords 필수.
