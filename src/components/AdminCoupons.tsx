@@ -94,6 +94,14 @@ export default function AdminCoupons() {
     [members, groups, excluded],
   );
 
+  async function removeEvent(ev: Event) {
+    if (!confirm(`‘${ev.title}’ 추첨 기록을 지울까요?\n당첨자 목록과 쿠폰 번호도 함께 지워지고 되돌릴 수 없어요.\n(이미 보낸 1:1 메시지는 회원 문의함에 그대로 남아요.)`)) return;
+    const { error } = await supabase.rpc("admin_delete_coupon_event", { eid: ev.id });
+    if (error) return alert("기록을 지우지 못했어요. 잠시 후 다시 시도해 주세요.");
+    setOpenEvent(null);
+    reload();
+  }
+
   if (loading || !isAdmin) return null;
 
   const toggle = (id: string) => setExcluded((prev) => {
@@ -217,6 +225,9 @@ export default function AdminCoupons() {
                   <div className="mt-3 space-y-3">
                     <WinnerList winners={ws} />
                     <SendBox ev={ev} winners={ws} onSent={reload} />
+                    <div className="border-t border-line pt-3 text-right">
+                      <button onClick={() => removeEvent(ev)} className="rounded-full border border-red-700 px-4 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50">🗑 이 추첨 기록 지우기</button>
+                    </div>
                   </div>
                 )}
               </div>
