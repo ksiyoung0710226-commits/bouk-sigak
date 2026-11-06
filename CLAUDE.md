@@ -72,7 +72,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 관리자 회원 관리: `/profile` 내 정보 칸 바로 아래 `AdminMembers` 컴포넌트(`src/components/AdminMembers.tsx`, 관리자에게만 렌더링; 헤더 "🛠 회원 관리" → `/profile#admin-members`): 회원 목록(이메일·닉네임·유형·가입일·최근 로그인·글/댓글 수, 검색), 강제 탈퇴(닉네임 입력 확인). DB 함수 `admin_list_members()`, `admin_delete_member(uuid)`(005) — 관리자 여부를 DB가 확인. 본인·다른 관리자는 삭제 불가.
 
 ## 남은 할 일 (2026-11-06 최종 점검 후)
-1. **AI 켜기(사용자 작업)**: 사용자가 Google AI Studio에서 무료 Gemini API 키를 만들면 → Vercel env `GEMINI_API_KEY`(가려진 입력 창으로 받기, 채팅에 쓰지 않게) → 재학생·교사 계정으로 실제 답변·출처 확인 → `AI_ENABLED = true` → push(홈에 칸 표시).
+1. **AI 켜짐(2026-11-06)**: Gemini 무료 키를 Vercel env `GEMINI_API_KEY`에 등록, 실제 답변·출처 확인 후 `AI_ENABLED = true`. 모델이 바쁘면(503) 다음 무료 모델로 자동 전환, 다 실패하면 지식 도우미. 키를 바꾸려면 가려진 입력 창으로 받아 `vercel env add GEMINI_API_KEY production --sensitive` 후 재배포.
 2. **콘텐츠 교재 대조**: 새 5과목(ece-intro, play-guidance, language-literature, math-science, parent-education, 53단원)은 한 줄씩 검토 안 함. 기존 교재 대조 필요 항목(손 씻기, 아동학대·신고, 보육행정, 프로젝트 접근법 3단계, 이차 정서 시기, 볼비 단계 월령)도 그대로.
 3. 카카오톡 알림은 사용 안 함(코드·DB는 남김, 관리자 화면 `AdminKakao`는 주석 처리, 처리방침 위탁표에서 카카오 제거). 다시 쓰려면 둘 다 되돌리고 KAKAO_REST_KEY 등록.
 4. 아직 안 만든 요청: 관리자 1:1 메시지 → 회원 메일 알림, 내 글 새 댓글 🔔 숫자 알림, 교사 인증(기관 이름 + 관리자 승인) 후에만 Q&A 답변, 1:1 메시지·채팅 사진 첨부, Gmail 'educare insight' 라벨(사용자가 Gmail 필터로).
