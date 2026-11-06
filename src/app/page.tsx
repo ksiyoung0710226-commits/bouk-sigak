@@ -12,8 +12,8 @@ const cards = [
 export default function Home() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
-      <section className="panel-lav p-10 text-center shadow-[5px_5px_0_var(--ink)]">
-        <h1 className="logo-font flex flex-wrap items-center justify-center gap-2 text-5xl sm:text-7xl">
+      <section className="panel-lav px-4 py-8 sm:p-10 text-center shadow-[5px_5px_0_var(--ink)]">
+        <h1 className="logo-font flex flex-wrap items-center justify-center gap-2 text-4xl sm:text-7xl">
           educare insight
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/mascot.svg" alt="" aria-hidden width={56} height={56} className="h-12 w-12 sm:h-14 sm:w-14" />

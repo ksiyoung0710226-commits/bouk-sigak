@@ -36,6 +36,9 @@ html {
 }
 
 body {
+  /* 한글은 단어(어절) 단위로 줄바꿈, 아주 긴 낱말만 강제로 나눔 */
+  word-break: keep-all;
+  overflow-wrap: break-word;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-noto), system-ui, sans-serif;

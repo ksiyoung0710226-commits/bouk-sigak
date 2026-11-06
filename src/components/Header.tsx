@@ -12,7 +12,7 @@ export default function Header() {
     <header className="sticky top-0 z-10 border-b-2 border-ink bg-background/95 backdrop-blur">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3">
         <Link href="/" className="flex items-center gap-1.5" aria-label="educare insight 홈">
-          <span className="logo-font text-3xl">educare insight</span>
+          <span className="logo-font text-2xl sm:text-3xl">educare insight</span>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/mascot.svg" alt="" aria-hidden width={32} height={32} className="h-8 w-8" />
         </Link>
