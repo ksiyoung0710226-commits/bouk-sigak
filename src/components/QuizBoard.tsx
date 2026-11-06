@@ -9,8 +9,7 @@ import { useAuth } from "./AuthProvider";
 type QuizSet = { id: number; title: string; description: string | null; starts_at: string; ends_at: string | null; published: boolean; created_at: string };
 type Phase = "upcoming" | "event" | "practice";
 // 기간 중 = 이벤트(문제당 1번, 추첨 기록) / 마감 후 = 연습(누구나 무제한, 기록 없음)
-const phaseOf = (s: QuizSet, now = Date.now()): Phase =>
-  now < new Date(s.starts_at).getTime() ? "upcoming" : s.ends_at && now >= new Date(s.ends_at).getTime() ? "practice" : "event";
+const phaseOf = (_s: QuizSet, _now = Date.now()): Phase => "practice";
 const fmtDate = (d: string) => new Date(d).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
 const PHASE_LABEL: Record<Phase, string> = { upcoming: "· 곧 시작", event: "· 🎁 이벤트 중", practice: "· 연습 모드" };
 type Quiz = { id: number; set_id: number; qtype: "choice" | "short"; category: string; question: string; choices: string[] | null; published: boolean; created_at: string };

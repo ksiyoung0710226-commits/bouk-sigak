@@ -22,7 +22,7 @@ export default function Home() {
           <img src="/mascot.svg" alt="" aria-hidden width={56} height={56} className="h-12 w-12 sm:h-14 sm:w-14" />
         </h1>
         <p className="mt-4 text-lg">
-          유아교육과, 아동보육과, 교사들을 위한 페이지
+             아동보육과 유아교육과 교사들을 위한 페이지
           <br />
           <span className="hl font-bold">함께 배우고 나누는 페이지</span>입니다.
         </p>
