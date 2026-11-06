@@ -20,7 +20,7 @@ export default function Privacy() {
               <tbody>
                 <tr><td className={td}>필수(공통)</td><td className={td}>이메일, 비밀번호(암호화 저장), 닉네임, 가입 유형(재학생/현장 교사)</td><td className={td}>회원 식별, 로그인, 이메일 인증, 공지·신고 처리 결과 안내</td></tr>
                 <tr><td className={td}>필수(재학생)</td><td className={td}>재학 중인 학교·학과</td><td className={td}>재학생 확인 표시, 회원 간 소개(공개 설정 시)</td></tr>
-                <tr><td className={td}>선택(재학생)</td><td className={td}>학번</td><td className={td}>운영자의 재학생 확인(본인·운영자만 열람)</td></tr>
+                <tr><td className={td}>선택(재학생)</td><td className={td}>학번(입학 연도 두 자리)</td><td className={td}>운영자의 재학생 확인(본인·운영자만 열람)</td></tr>
                 <tr><td className={td}>필수(현장 교사)</td><td className={td}>근무 지역(시·도), 어린이집 분류</td><td className={td}>현장 교사 표시, 회원 간 소개(공개 설정 시)</td></tr>
                 <tr><td className={td}>이용 중 생성</td><td className={td}>게시글·댓글, 1:1 채팅·문의 내용, 신고 내용, 이용 정지 기록, 쿠폰 추첨 기록, 가입일·최근 로그인 시각, 접속 기록(IP 등, 호스팅·DB 업체가 보안 목적으로 자동 기록)</td><td className={td}>서비스 제공, 부정 이용 방지, 신고 처리, 이벤트 상품 전달</td></tr>
               </tbody>

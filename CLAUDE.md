@@ -26,7 +26,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 게시판 글 보기: 제목/미리보기 클릭 → 화면 전체 `PostModal`(Esc·닫기). 작성자 줄(`AuthorLine`)에 공개된 학교/지역·유형 표시 + '💬 1:1 채팅' 버튼.
 - 회원 추가 정보(009): `profile_details`(school | region+center_type, is_public). 가입 트리거가 메타데이터에서 저장(잘못된 값은 버림). 비공개면 본인·관리자만 조회(RLS). 값 목록은 `src/lib/member-info.ts`와 DB check를 같이 바꿀 것. `/profile`에서 수정·공개 전환, 관리자 목록에 표시.
 - 학교 검증(010): 재학생은 `SchoolPicker`로 학교+학과 검색 선택(줄임말 '한양여대' 등 지원). 목록 = `src/lib/schools-data.ts`(대학알리미 대학별 학과정보 2023.6.14, data.go.kr 15014632에서 생성: 폐지 아닌 학사·전문학사 중 표준분류 소계열 유아교육/아동·가족학, 학과명 '보육', 사회복지학 중 아동·유아·영유아 → 212개교 340학과) = DB `school_majors`. DB 트리거 `verify_school`이 목록에 있으면 `school_verified`=true → 이름 옆 ✓. '목록에 없어요'로 직접 입력 가능(✓ 없음). 목록 갱신 시 두 곳을 같이 바꿀 것.
-- 학번(011): `profile_private.student_no`(선택, 영문·숫자·하이픈 4~20자). 공개 설정과 무관하게 본인·관리자만 조회. 가입 시 재학생만 저장, `/profile`에서 수정, 관리자 목록에 표시·검색.
+- 학번(011): `profile_private.student_no`(선택, **입학 연도 숫자 두 자리만**, 019에서 변경: 사용자 요청 '개인정보라서'. 화면 STUDENT_NO_RE·DB check·가입 트리거를 같이 바꿀 것). 공개 설정과 무관하게 본인·관리자만 조회. 가입 시 재학생만 저장, `/profile`에서 수정, 관리자 목록에 표시·검색.
 - 교사 근무지: `CenterPicker` ① 지역 → ② 어린이집 분류(유형) 버튼. 어린이집 이름은 받지 않음(사용자 결정).
 - 회원 관리 목록은 재학생 / 현장교사 두 칸, 검색은 두 칸에 함께 적용. `/profile`은 max-w-5xl, 관리자 칸만 넓고 나머지 폼은 max-w-2xl.
 - 회원 1:1 채팅(009) `/chat`: `dm_threads`(요청 멘트 intro, pending→accepted/declined, 같은 두 사람 사이 1개·거절 후 재요청 불가) + `dm_messages`(수락 후에만). RPC `respond_dm`, `mark_dm_read`. 관리자도 대화 내용은 못 봄. 헤더 `ChatLink` 배지(받은 요청+안 읽은 대화), 대화방은 5초마다 새로고침.
@@ -67,8 +67,8 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 
 ## 남은 할 일
 1. (2026-11-06 배포 완료) 신고 관리·정지·카카오 알림·약관·비밀번호 찾기. git push 시 Vercel 자동 배포도 됨(프로젝트 2개에 배포됨).
-2. 사용자 작업 대기: ① Gmail 앱 비밀번호 → .env.local에 SMTP_USER/SMTP_PASS → `scripts/setup-email.sh` → 재배포 ② 카카오 개발자 앱 등록 → KAKAO_REST_KEY(및 client secret) Vercel env → 재배포 → 관리자 화면에서 '카카오톡으로 알림 받기 연결'.
-3. 약관·처리방침은 초안. (2026-11-06) 1:1 채팅 신고·차단(016: dm_threads.blocked_by, RPC block_dm/unblock_dm, reports.dm_message_id/dm_thread_id) DB 적용·배포 완료.
+2. Gmail SMTP 설정 완료(2026-11-06). 사용자 작업 대기(선택, 사용자는 메일로 충분하다고 함): 카카오 개발자 앱 등록 → KAKAO_REST_KEY(및 client secret) Vercel env → 재배포 → 관리자 화면에서 '카카오톡으로 알림 받기 연결'.
+3. 약관·처리방침은 초안. (2026-11-06) 관리자 알림은 카카오 미연결 시 Gmail(NOTIFY_EMAIL 또는 SMTP_USER)로(018, 2026-11-06 적용, SMTP 설정 완료). 1:1 채팅 신고·차단(016: dm_threads.blocked_by, RPC block_dm/unblock_dm, reports.dm_message_id/dm_thread_id) DB 적용·배포 완료.
 4. 교사 초대코드 변경은 DB `app_secrets` 표(key='teacher_code') 업데이트. 코드는 사용자에게 따로 전달했음.
 5. (선택) 다른 페이지 제목도 로고와 같은 부드러운 글꼴로 맞출지 사용자에게 확인.
 

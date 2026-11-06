@@ -35,7 +35,7 @@ export default function SignupForm() {
     if (nickErr) return setError(nickErr);
     if (password.length < 8) return setError("비밀번호는 8자 이상이어야 해요.");
     if (kind === "student" && (!school.trim() || !major.trim())) return setError("재학 중인 학교와 학과를 골라 주세요.");
-    if (kind === "student" && studentNo.trim() && !STUDENT_NO_RE.test(studentNo.trim())) return setError("학번은 숫자·영문 4~20자로 적어 주세요.");
+    if (kind === "student" && studentNo.trim() && !STUDENT_NO_RE.test(studentNo.trim())) return setError("학번은 입학 연도 숫자 두 자리로 적어 주세요. (예: 24)");
     if (kind === "teacher" && (!region || !centerType)) return setError("근무 지역과 어린이집 유형을 골라 주세요.");
     setBusy(true);
     const { data: free } = await supabase.rpc("nickname_available", { nick });
@@ -104,7 +104,7 @@ export default function SignupForm() {
             <SchoolPicker school={school} major={major} onChange={(s, m) => { setSchool(s); setMajor(m); }} />
             <label className="mt-3 block">
               <span className="mb-1 block text-sm font-medium">학번 <span className="font-normal text-foreground/60">(선택)</span></span>
-              <input className={input} value={studentNo} onChange={(e) => setStudentNo(e.target.value)} placeholder="예: 2601234" maxLength={20} inputMode="numeric" autoComplete="off" />
+              <input className={input} value={studentNo} onChange={(e) => setStudentNo(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} placeholder="예: 24 (입학 연도 두 자리)" maxLength={2} inputMode="numeric" autoComplete="off" />
               <span className="mt-1 block text-xs text-foreground/60">🔒 학번은 다른 회원에게 <b>절대 공개되지 않고</b>, 나와 관리자만 볼 수 있어요.</span>
             </label>
           </div>
