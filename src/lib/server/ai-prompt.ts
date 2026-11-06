@@ -76,7 +76,9 @@ export function retrieve(question: string, max = 5): Doc[] {
   }).sort((a, b) => b.s - a.s);
   // 질문 낱말의 일정 부분 이상이 맞아야 '관련 있음'으로 봄(엉뚱한 자료로 답하지 않게)
   const min = Math.max(qWeight * 0.6, 3);
-  return scored.filter((x) => x.s >= min).slice(0, max).map((x) => x.d);
+  // 가장 잘 맞는 자료의 절반에도 못 미치는 것은 뺌(덜 관련된 자료가 섞이지 않게)
+  const top = scored[0]?.s ?? 0;
+  return scored.filter((x) => x.s >= min && x.s >= top * 0.5).slice(0, max).map((x) => x.d);
 }
 
 /** 답 끝에 붙일 출처: 사이트 자료 주소 + 그 자료의 공식 출처(중복 제거) */
