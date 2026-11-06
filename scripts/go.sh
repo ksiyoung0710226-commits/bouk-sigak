@@ -3,7 +3,7 @@
 set -e
 cd "$(dirname "$0")/.."
 export PATH="$HOME/.local/node22/bin:$PATH"
-for f in supabase/migrations/024_coupon_event_delete.sql supabase/migrations/025_quizzes.sql supabase/migrations/026_inquiry_category.sql; do
+for f in supabase/migrations/027_quiz_types.sql; do
   echo "DB 적용: $f"
   npx supabase db query --remote=soiiihaivulcqqomzotb --file "$f" --yes > /tmp/go-db.log 2>&1 || { cat /tmp/go-db.log; echo "실패했어요. 이 화면을 Claude에게 보여 주세요."; exit 1; }
 done
