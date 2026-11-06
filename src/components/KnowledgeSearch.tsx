@@ -19,7 +19,7 @@ export default function KnowledgeSearch({ items, children }: { items: SearchItem
         let score = 0;
         for (const t of terms) {
           let hit = 0;
-          if (title.includes(t)) hit += 5;
+          if (title.includes(t)) hit += 10; // 단원 제목에 있으면 가장 먼저
           if (kw.some((k) => k.includes(t))) hit += 4;
           if (hd.some((h) => h.includes(t))) hit += 2;
           if (sum.includes(t)) hit += 2;
