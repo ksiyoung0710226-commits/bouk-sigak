@@ -66,7 +66,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 관리자 회원 관리: `/profile` 내 정보 칸 바로 아래 `AdminMembers` 컴포넌트(`src/components/AdminMembers.tsx`, 관리자에게만 렌더링; 헤더 "🛠 회원 관리" → `/profile#admin-members`): 회원 목록(이메일·닉네임·유형·가입일·최근 로그인·글/댓글 수, 검색), 강제 탈퇴(닉네임 입력 확인). DB 함수 `admin_list_members()`, `admin_delete_member(uuid)`(005) — 관리자 여부를 DB가 확인. 본인·다른 관리자는 삭제 불가.
 
 ## 남은 할 일
-1. (2026-11-06 코드·DB 완료, 배포 대기) 커밋 ed8f86e: 신고 관리·정지·카카오 알림·약관·비밀번호 찾기. `git push` + `npx vercel deploy --prod --yes` 필요(자동 모드에서 배포 권한이 막혀 사용자 확인 필요).
+1. (2026-11-06 배포 완료) 신고 관리·정지·카카오 알림·약관·비밀번호 찾기. git push 시 Vercel 자동 배포도 됨(프로젝트 2개에 배포됨).
 2. 사용자 작업 대기: ① Gmail 앱 비밀번호 → .env.local에 SMTP_USER/SMTP_PASS → `scripts/setup-email.sh` → 재배포 ② 카카오 개발자 앱 등록 → KAKAO_REST_KEY(및 client secret) Vercel env → 재배포 → 관리자 화면에서 '카카오톡으로 알림 받기 연결'.
 3. 약관·처리방침은 초안. 1:1 채팅 신고·차단 기능은 아직 없음.
 4. 교사 초대코드 변경은 DB `app_secrets` 표(key='teacher_code') 업데이트. 코드는 사용자에게 따로 전달했음.
