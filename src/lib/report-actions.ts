@@ -16,9 +16,12 @@ export const actionLabel = (a: string | null) => REPORT_ACTIONS.find((x) => x.va
 // 정지·경고와 함께 '게시물도 삭제'를 고를 수 있는 처분
 export const canAlsoDelete = (a: string) => ["warning", "suspend_7", "suspend_30", "suspend_forever"].includes(a);
 
+// 신고 대상 이름
+export const targetWord = (t: string | null) => (t === "comment" ? "댓글" : t === "dm" ? "채팅 메시지" : "게시글");
+
 // 신고자에게 보내는 안내 메일 문장(사용자 요청 문구)
 export function reportMail(nickname: string, action: string, targetType: string | null, alsoDeleted: boolean) {
-  const what = targetType === "comment" ? "댓글" : "게시글";
+  const what = targetWord(targetType);
   const label = actionLabel(action) + (alsoDeleted && canAlsoDelete(action) ? " 및 게시물 삭제" : "");
   return {
     subject: "[보육시각] 신고 처리가 완료되었습니다",

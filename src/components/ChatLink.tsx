@@ -7,7 +7,7 @@ import { useAuth } from "./AuthProvider";
 
 type Row = {
   requester_id: string; recipient_id: string; status: string;
-  requester_read_at: string; recipient_read_at: string | null; last_message_at: string | null;
+  requester_read_at: string; recipient_read_at: string | null; last_message_at: string | null; blocked_by: string | null;
 };
 
 // 상단 '채팅' 메뉴: 받은 요청 수 + 안 읽은 대화 수를 배지로 표시
@@ -22,12 +22,13 @@ export default function ChatLink() {
     const check = () =>
       supabase
         .from("dm_threads")
-        .select("requester_id,recipient_id,status,requester_read_at,recipient_read_at,last_message_at")
+        .select("requester_id,recipient_id,status,requester_read_at,recipient_read_at,last_message_at,blocked_by")
         .in("status", ["pending", "accepted"])
         .then(({ data }) => {
           if (!alive) return;
           const rows = (data as Row[]) ?? [];
           const n = rows.filter((t) => {
+            if (t.blocked_by === me) return false;
             if (t.status === "pending") return t.recipient_id === me;
             if (!t.last_message_at) return false;
             const read = t.requester_id === me ? t.requester_read_at : t.recipient_read_at;

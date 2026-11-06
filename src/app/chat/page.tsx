@@ -6,12 +6,14 @@ import PageTitle from "@/components/PageTitle";
 import RequireAuth from "@/components/RequireAuth";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
+import { ReportDialog, type ReportTarget } from "@/components/BoardView";
 
 type Person = { nickname: string; kind: string } | null;
 type Thread = {
   id: number; requester_id: string; recipient_id: string; intro: string;
   status: "pending" | "accepted" | "declined";
   requester_read_at: string; recipient_read_at: string | null; last_message_at: string | null; created_at: string;
+  blocked_by: string | null; blocked_at: string | null;
   requester: Person; recipient: Person;
 };
 type Msg = { id: number; sender_id: string; body: string; created_at: string };
@@ -22,13 +24,25 @@ const kindLabel = (k?: string) => (k === "teacher" ? "현장교사" : "재학생
 const notify = () => window.dispatchEvent(new Event("dm:changed"));
 
 export const isUnread = (t: Thread, me: string) => {
-  if (t.status !== "accepted" || !t.last_message_at) return false;
+  if (t.status !== "accepted" || !t.last_message_at || t.blocked_by === me) return false;
   const read = t.requester_id === me ? t.requester_read_at : t.recipient_read_at;
   return !read || t.last_message_at > read;
 };
 
+// 차단: 상대와 더 이상 메시지를 주고받지 못하고, 다시 채팅 요청도 받지 않음
+async function blockThread(t: Thread, nickname: string) {
+  if (!confirm(`${nickname} 님을 차단할까요?\n\n차단하면 서로 메시지를 보낼 수 없고, 이 회원은 다시 채팅을 요청할 수 없어요. 차단은 채팅 목록 아래 ‘차단한 회원’에서 풀 수 있어요.`)) return false;
+  const { error } = await supabase.rpc("block_dm", { tid: t.id });
+  if (error) { alert("차단하지 못했어요."); return false; }
+  notify();
+  return true;
+}
+
 function Conversation({ t, me, onBack }: { t: Thread; me: string; onBack: () => void }) {
   const partner = t.requester_id === me ? t.recipient : t.requester;
+  const partnerName = partner?.nickname ?? "탈퇴한 회원";
+  const [reporting, setReporting] = useState<ReportTarget | null>(null);
+  const blocked = t.blocked_by !== null;
   const [msgs, setMsgs] = useState<Msg[] | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -71,10 +85,18 @@ function Conversation({ t, me, onBack }: { t: Thread; me: string; onBack: () => 
 
   return (
     <div className="card space-y-4 p-5">
-      <button onClick={onBack} className="text-sm underline">← 채팅 목록</button>
-      <p className="text-lg font-bold">💬 {partner?.nickname ?? "탈퇴한 회원"} <span className="text-sm font-normal text-foreground/60">· {kindLabel(partner?.kind)}</span></p>
+      <div className="flex items-center justify-between gap-2">
+        <button onClick={onBack} className="text-sm underline">← 채팅 목록</button>
+        {!blocked && partner && (
+          <button onClick={async () => { if (await blockThread(t, partnerName)) onBack(); }} className="rounded-full border border-line bg-white px-3 py-1 text-xs">🚫 차단</button>
+        )}
+      </div>
+      <p className="text-lg font-bold">💬 {partnerName} <span className="text-sm font-normal text-foreground/60">· {kindLabel(partner?.kind)}</span></p>
       <div className="note p-3 text-sm">
-        <p className="text-xs text-foreground/60">처음 보낸 요청 멘트 · {when(t.created_at)}</p>
+        <p className="text-xs text-foreground/60">
+          처음 보낸 요청 멘트 · {when(t.created_at)}
+          {t.recipient_id === me && partner && <button onClick={() => setReporting({ kind: "dm_thread_id", id: t.id, nickname: partnerName })} className="ml-2 text-red-700 underline">신고</button>}
+        </p>
         <p className="mt-1 whitespace-pre-wrap">{t.intro}</p>
       </div>
       {!msgs ? <p className="text-sm text-foreground/60">불러오는 중…</p> : (
@@ -85,7 +107,10 @@ function Conversation({ t, me, onBack }: { t: Thread; me: string; onBack: () => 
               <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[80%] rounded-2xl border border-ink px-3 py-2 text-sm ${mine ? "bg-lav" : "bg-white"}`}>
                   <p className="whitespace-pre-wrap">{m.body}</p>
-                  <p className="mt-0.5 text-right text-[11px] text-foreground/50">{when(m.created_at)}</p>
+                  <p className="mt-0.5 text-right text-[11px] text-foreground/50">
+                    {!mine && partner && <button onClick={() => setReporting({ kind: "dm_message_id", id: m.id, nickname: partnerName })} className="mr-2 text-red-700 underline">신고</button>}
+                    {when(m.created_at)}
+                  </p>
                 </div>
               </li>
             );
@@ -94,12 +119,19 @@ function Conversation({ t, me, onBack }: { t: Thread; me: string; onBack: () => 
         </ul>
       )}
       <div ref={bottom} />
+      {blocked ? (
+        <p className="rounded-lg border border-line bg-white p-3 text-center text-sm text-foreground/70">
+          {t.blocked_by === me ? "차단한 회원이에요. 채팅 목록 아래 ‘차단한 회원’에서 차단을 풀 수 있어요." : "더 이상 이 회원과 메시지를 주고받을 수 없어요."}
+        </p>
+      ) : (
       <form onSubmit={send} className="flex gap-2">
         <input className="w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand" value={text}
           onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder="메시지를 입력하세요" />
         <button disabled={busy || !text.trim()} className="shrink-0 rounded-full bg-brand px-4 text-sm font-medium text-white disabled:opacity-50">보내기</button>
       </form>
-      <p className="text-xs text-foreground/60">아동·학부모·기관의 실명이나 개인정보는 보내지 말아 주세요.</p>
+      )}
+      <p className="text-xs text-foreground/60">아동·학부모·기관의 실명이나 개인정보는 보내지 말아 주세요. 불쾌한 메시지는 메시지 아래 ‘신고’를 눌러 알려 주세요.</p>
+      {reporting && <ReportDialog target={reporting} onClose={() => setReporting(null)} />}
     </div>
   );
 }
@@ -112,13 +144,14 @@ function Inner() {
   const openId = Number(params.get("t")) || null;
   const [threads, setThreads] = useState<Thread[] | null>(null);
   const [version, setVersion] = useState(0);
+  const [reporting, setReporting] = useState<ReportTarget | null>(null);
   const reload = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
     let alive = true;
     supabase
       .from("dm_threads")
-      .select("id,requester_id,recipient_id,intro,status,requester_read_at,recipient_read_at,last_message_at,created_at,requester:profiles!dm_threads_requester_id_fkey(nickname,kind),recipient:profiles!dm_threads_recipient_id_fkey(nickname,kind)")
+      .select("id,requester_id,recipient_id,intro,status,requester_read_at,recipient_read_at,last_message_at,created_at,blocked_by,blocked_at,requester:profiles!dm_threads_requester_id_fkey(nickname,kind),recipient:profiles!dm_threads_recipient_id_fkey(nickname,kind)")
       .order("created_at", { ascending: false })
       .then(({ data }) => { if (alive) setThreads((data as unknown as Thread[]) ?? []); });
     return () => { alive = false; };
@@ -133,14 +166,24 @@ function Inner() {
     reload();
   }
 
+  async function unblock(id: number, nickname: string) {
+    if (!confirm(`${nickname} 님의 차단을 풀까요? 다시 메시지를 주고받을 수 있게 돼요.`)) return;
+    const { error } = await supabase.rpc("unblock_dm", { tid: id });
+    if (error) return alert("차단을 풀지 못했어요.");
+    notify();
+    reload();
+  }
+
   if (!threads) return <p className="py-10 text-center text-foreground/60">불러오는 중…</p>;
 
   const current = threads.find((t) => t.id === openId && t.status === "accepted");
   if (current) return <Conversation t={current} me={me} onBack={() => { router.push("/chat"); reload(); }} />;
 
-  const received = threads.filter((t) => t.status === "pending" && t.recipient_id === me);
-  const sent = threads.filter((t) => t.status === "pending" && t.requester_id === me);
-  const chats = threads
+  const blockedByMe = threads.filter((t) => t.blocked_by === me);
+  const visible = threads.filter((t) => t.blocked_by !== me);
+  const received = visible.filter((t) => t.status === "pending" && t.recipient_id === me);
+  const sent = visible.filter((t) => t.status === "pending" && t.requester_id === me);
+  const chats = visible
     .filter((t) => t.status === "accepted")
     .sort((a, b) => (b.last_message_at ?? b.created_at).localeCompare(a.last_message_at ?? a.created_at));
 
@@ -157,6 +200,12 @@ function Inner() {
                 <div className="flex gap-2">
                   <button onClick={() => respond(t.id, true)} className="rounded-full bg-brand px-4 py-1.5 font-medium text-white">수락하고 채팅하기</button>
                   <button onClick={() => respond(t.id, false)} className="rounded-full border border-line bg-white px-4 py-1.5">거절</button>
+                  {t.requester && (
+                    <>
+                      <button onClick={async () => { if (await blockThread(t, t.requester!.nickname)) reload(); }} className="rounded-full border border-line bg-white px-4 py-1.5">🚫 차단</button>
+                      <button onClick={() => setReporting({ kind: "dm_thread_id", id: t.id, nickname: t.requester!.nickname })} className="px-2 text-red-700 underline">신고</button>
+                    </>
+                  )}
                 </div>
               </li>
             ))}
@@ -196,6 +245,25 @@ function Inner() {
           </ul>
         </section>
       )}
+
+      {blockedByMe.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-xl font-bold">🚫 차단한 회원</h2>
+          <ul className="space-y-2 text-sm">
+            {blockedByMe.map((t) => {
+              const partner = t.requester_id === me ? t.recipient : t.requester;
+              const name = partner?.nickname ?? "탈퇴한 회원";
+              return (
+                <li key={t.id} className="card-sm flex items-center justify-between gap-2 p-3">
+                  <span><b>{name}</b> <span className="text-xs text-foreground/60">· {t.blocked_at ? when(t.blocked_at) : ""} 차단</span></span>
+                  <button onClick={() => unblock(t.id, name)} className="rounded-full border border-line bg-white px-3 py-1 text-xs">차단 풀기</button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+      {reporting && <ReportDialog target={reporting} onClose={() => setReporting(null)} />}
     </div>
   );
 }

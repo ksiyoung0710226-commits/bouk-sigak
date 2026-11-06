@@ -185,13 +185,15 @@ export default function BoardView({
 // 신고 창: 이유를 고르고(필수) 자세한 내용을 적을 수 있다 → 관리자 신고 관리 화면에 그대로 보임
 const REPORT_REASONS = ["욕설·비방·혐오 표현", "아동·학부모·기관 개인정보 노출", "광고·홍보·도배", "음란하거나 불쾌한 내용", "허위·잘못된 정보", "기타"];
 
-function ReportDialog({ target, onClose }: { target: { kind: "post_id" | "comment_id"; id: number; nickname: string }; onClose: () => void }) {
+export type ReportTarget = { kind: "post_id" | "comment_id" | "dm_message_id" | "dm_thread_id"; id: number; nickname: string };
+
+export function ReportDialog({ target, onClose }: { target: ReportTarget; onClose: () => void }) {
   const { session } = useAuth();
   const [reason, setReason] = useState("");
   const [detail, setDetail] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const what = target.kind === "comment_id" ? "댓글" : "글";
+  const what = { post_id: "글", comment_id: "댓글", dm_message_id: "채팅 메시지", dm_thread_id: "채팅 요청 멘트" }[target.kind];
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -231,6 +233,7 @@ function ReportDialog({ target, onClose }: { target: { kind: "post_id" | "commen
           <textarea className={`${input} min-h-20`} value={detail} onChange={(e) => setDetail(e.target.value)} maxLength={450}
             placeholder="어떤 부분이 문제인지 적어 주시면 처리에 도움이 돼요." />
         </label>
+        {target.kind.startsWith("dm_") && <p className="text-xs text-foreground/60">운영자는 평소 채팅 내용을 볼 수 없고, 신고한 이 메시지 한 개만 확인해요.</p>}
         <p className="text-xs text-foreground/60">신고한 사람은 상대방에게 알려지지 않아요. 허위 신고가 반복되면 이용이 제한될 수 있어요.</p>
         {err && <p className="text-red-700">{err}</p>}
         <div className="flex gap-2">

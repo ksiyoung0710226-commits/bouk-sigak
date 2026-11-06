@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
-import { REPORT_ACTIONS, actionLabel, canAlsoDelete } from "@/lib/report-actions";
+import { REPORT_ACTIONS, actionLabel, canAlsoDelete, targetWord } from "@/lib/report-actions";
 
 type Report = {
   id: number;
@@ -12,7 +12,7 @@ type Report = {
   reporter_id: string;
   reporter_nickname: string | null;
   reporter_email: string | null;
-  target_type: "post" | "comment";
+  target_type: "post" | "comment" | "dm";
   post_id: number | null;
   comment_id: number | null;
   target_exists: boolean;
@@ -33,7 +33,7 @@ type Report = {
 };
 
 const dt = (d: string | null) => (d ? new Date(d).toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" }) : "-");
-const boardName = (b: string | null) => (b === "qna" ? "Q&A" : b === "community" ? "커뮤니티" : "-");
+const boardName = (b: string | null) => (b === "qna" ? "Q&A" : b === "community" ? "커뮤니티" : b === "dm" ? "1:1 채팅" : "-");
 
 function suspendText(until: string | null) {
   if (!until) return null;
@@ -55,7 +55,7 @@ function ResolveBox({ r, onDone }: { r: Report; onDone: (msg: string) => void })
   const [tellTarget, setTellTarget] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const what = r.target_type === "comment" ? "댓글" : "게시글";
+  const what = targetWord(r.target_type);
   const targetGone = !r.target_author_exists;
 
   async function submit() {
@@ -136,7 +136,7 @@ function ResolveBox({ r, onDone }: { r: Report; onDone: (msg: string) => void })
 
 function ReportCard({ r, onChange }: { r: Report; onChange: (msg?: string) => void }) {
   const [busy, setBusy] = useState(false);
-  const what = r.target_type === "comment" ? "댓글" : "게시글";
+  const what = targetWord(r.target_type);
   const suspended = suspendText(r.target_author_suspended_until);
 
   async function resend() {
@@ -195,7 +195,7 @@ function ReportCard({ r, onChange }: { r: Report; onChange: (msg?: string) => vo
         <p className="text-xs font-bold text-foreground/60">
           신고된 {what} 내용 (신고 당시 그대로 저장) {r.target_exists ? "· 지금도 사이트에 있음" : "· 이미 삭제됨"}
         </p>
-        {r.target_title && <p className="mt-1 font-bold">{r.target_type === "comment" ? `글 「${r.target_title}」에 단 댓글` : r.target_title}</p>}
+        {r.target_title && <p className="mt-1 font-bold">{r.target_type === "comment" ? `글 「${r.target_title}」에 단 댓글` : r.target_type === "dm" ? `${r.target_title} (회원 간 1:1 채팅, 신고된 부분만 보임)` : r.target_title}</p>}
         <p className="mt-1 max-h-60 overflow-auto whitespace-pre-wrap">{r.target_body ?? "-"}</p>
       </div>
 

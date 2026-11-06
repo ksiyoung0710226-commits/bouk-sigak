@@ -5,7 +5,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "./AuthProvider";
 
-type Thread = { id: number; requester_id: string; status: "pending" | "accepted" | "declined" };
+type Thread = { id: number; requester_id: string; status: "pending" | "accepted" | "declined"; blocked_by: string | null };
 
 // 작성자 닉네임 옆 '1:1 채팅' 버튼. 처음에는 멘트를 적어 수락 요청을 보내고, 상대가 수락해야 채팅할 수 있다.
 export default function DmRequestButton({ userId, nickname }: { userId: string; nickname: string }) {
@@ -24,7 +24,7 @@ export default function DmRequestButton({ userId, nickname }: { userId: string; 
     setErr("");
     const { data } = await supabase
       .from("dm_threads")
-      .select("id,requester_id,status")
+      .select("id,requester_id,status,blocked_by")
       .or(`and(requester_id.eq.${me},recipient_id.eq.${userId}),and(requester_id.eq.${userId},recipient_id.eq.${me})`)
       .maybeSingle();
     setThread((data as Thread) ?? null);
@@ -37,7 +37,7 @@ export default function DmRequestButton({ userId, nickname }: { userId: string; 
     const { data, error } = await supabase
       .from("dm_threads")
       .insert({ requester_id: me, recipient_id: userId, intro: intro.trim() })
-      .select("id,requester_id,status")
+      .select("id,requester_id,status,blocked_by")
       .single();
     setBusy(false);
     if (error) return setErr("요청을 보내지 못했어요. 이미 요청한 적이 있는지 확인해 주세요.");
@@ -77,6 +77,8 @@ export default function DmRequestButton({ userId, nickname }: { userId: string; 
                   <button type="button" onClick={close} className="rounded-full border border-line bg-white px-5 py-2">취소</button>
                 </div>
               </form>
+            ) : thread.blocked_by ? (
+              <p>{thread.blocked_by === me ? "내가 차단한 회원이에요. 채팅 메뉴의 ‘차단한 회원’에서 풀 수 있어요." : "이 회원과는 채팅할 수 없어요."}</p>
             ) : thread.status === "accepted" ? (
               <div className="space-y-3">
                 <p>이미 채팅이 연결되어 있어요.</p>
