@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 type Inquiry = {
   id: number; user_id: string; title: string; status: "open" | "answered" | "closed";
   admin_unread: boolean; user_unread: boolean; created_at: string; updated_at: string; started_by_admin: boolean;
+  category: string | null;
   profiles: { nickname: string } | null;
 };
 type Message = {
@@ -37,8 +38,32 @@ function StatusBadge({ i }: { i: Inquiry }) {
 // 헤더 알림 숫자를 바로 갱신하도록 알림
 const notifyHeader = () => window.dispatchEvent(new Event("inquiry:changed"));
 
-function NewInquiry({ onCreated }: { onCreated: (id: number) => void }) {
+// 문의 종류와 도우미 안내 (DB check와 같은 이름)
+const KINDS = [
+  { key: "수정 문의", emoji: "✏️", desc: "내 정보·글 수정, 사이트 내용이 틀렸을 때",
+    tip: "닉네임, 학교·근무 정보, 공개 설정은 ‘내 정보’에서 바로 고칠 수 있고, 내 글은 글을 열어 ‘✏️ 수정’을 누르면 돼요. 사이트 내용이 틀렸다면 어느 페이지의 어떤 부분인지 알려 주세요. 확인해서 고칠게요.",
+    title: "예: 아동 필수 지식 ‘애착과 기질’ 내용 확인 부탁드려요" },
+  { key: "탈퇴 문의", emoji: "👋", desc: "탈퇴 방법, 탈퇴 후 정보 처리",
+    tip: "‘내 정보’ 맨 아래 ‘회원 탈퇴’에서 직접 탈퇴할 수 있어요. 탈퇴하면 계정과 내가 쓴 글·댓글이 모두 지워지고 되돌릴 수 없어요. 직접 하기 어렵거나 궁금한 점이 있으면 아래에 적어 주세요.",
+    title: "예: 탈퇴하면 글이 모두 지워지나요?" },
+  { key: "기타 문의", emoji: "💬", desc: "그 밖의 궁금한 점, 제안, 불편한 점",
+    tip: "무엇이든 편하게 적어 주세요. 관리자에게 바로 전달돼요.",
+    title: "예: 이런 기능이 있으면 좋겠어요" },
+] as const;
+
+function Bubble({ me, children }: { me?: boolean; children: React.ReactNode }) {
+  return (
+    <div className={`flex ${me ? "justify-end" : "justify-start"} gap-2`}>
+      {!me && <span aria-hidden className="text-2xl">🤖</span>}
+      <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${me ? "bg-brand text-white" : "border border-line bg-white"}`}>{children}</div>
+    </div>
+  );
+}
+
+// 대화형 문의 도우미: ① 어떤 일로 문의하는지 묻고 ② 종류별 안내 후 ③ 관리자에게 바로 보냄
+function NewInquiry({ onCreated, onCancel }: { onCreated: (id: number) => void; onCancel: () => void }) {
   const { session } = useAuth();
+  const [kind, setKind] = useState<(typeof KINDS)[number] | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -46,12 +71,12 @@ function NewInquiry({ onCreated }: { onCreated: (id: number) => void }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!session) return;
+    if (!session || !kind) return;
     setBusy(true);
     setErr("");
     const { data, error } = await supabase
       .from("inquiries")
-      .insert({ user_id: session.user.id, title: title.trim() })
+      .insert({ user_id: session.user.id, title: title.trim(), category: kind.key })
       .select("id")
       .single();
     if (error || !data) {
@@ -69,14 +94,38 @@ function NewInquiry({ onCreated }: { onCreated: (id: number) => void }) {
   }
 
   return (
-    <form onSubmit={submit} className="card space-y-3 p-5">
-      <h2 className="text-lg">💌 새 문의 보내기</h2>
-      <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목 (100자 이내)" maxLength={100} required />
-      <textarea className={`${input} min-h-32`} value={body} onChange={(e) => setBody(e.target.value)} placeholder="궁금한 점이나 불편한 점을 적어 주세요 (3000자 이내)" maxLength={3000} required />
-      <p className="text-xs text-foreground/60">관리자에게만 보이는 1:1 문의예요. 답변이 오면 상단 ‘문의하기’ 옆에 표시가 떠요.</p>
-      {err && <p className="text-sm text-red-700">{err}</p>}
-      <button disabled={busy} className={primary}>{busy ? "보내는 중…" : "문의 보내기"}</button>
-    </form>
+    <div className="card space-y-3 p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg">💌 문의 도우미</h2>
+        <button type="button" onClick={onCancel} className="text-xs underline">닫기</button>
+      </div>
+      <Bubble>안녕하세요! 어떤 일로 문의하시나요? 아래에서 골라 주세요.</Bubble>
+      {!kind ? (
+        <div className="grid gap-2 sm:grid-cols-3">
+          {KINDS.map((k) => (
+            <button key={k.key} type="button" onClick={() => setKind(k)} className="rounded-2xl border-2 border-ink bg-white p-3 text-left hover:bg-lime/40">
+              <p className="font-bold">{k.emoji} {k.key}</p>
+              <p className="mt-1 text-xs text-foreground/70">{k.desc}</p>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <>
+          <Bubble me>{kind.emoji} {kind.key}</Bubble>
+          <Bubble>{kind.tip}</Bubble>
+          <form onSubmit={submit} className="space-y-3 pt-1">
+            <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={kind.title} maxLength={100} required aria-label="제목" />
+            <textarea className={`${input} min-h-32`} value={body} onChange={(e) => setBody(e.target.value)} placeholder="자세한 내용을 적어 주세요 (3000자 이내)" maxLength={3000} required aria-label="내용" />
+            <p className="text-xs text-foreground/60">관리자에게 바로 전달되는 1:1 문의예요(관리자에게 메일 알림이 가요). 답변이 오면 상단 ‘문의하기’ 옆에 숫자가 떠요.</p>
+            {err && <p className="text-sm text-red-700">{err}</p>}
+            <div className="flex flex-wrap gap-2">
+              <button disabled={busy} className={primary}>{busy ? "보내는 중…" : "관리자에게 보내기"}</button>
+              <button type="button" onClick={() => setKind(null)} className="rounded-full border border-line bg-white px-5 py-2">종류 다시 고르기</button>
+            </div>
+          </form>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -193,7 +242,7 @@ function Inner() {
     let alive = true;
     supabase
       .from("inquiries")
-      .select("id,user_id,title,status,admin_unread,user_unread,created_at,updated_at,started_by_admin,profiles(nickname)")
+      .select("id,user_id,title,status,admin_unread,user_unread,created_at,updated_at,started_by_admin,category,profiles(nickname)")
       .order("updated_at", { ascending: false })
       .limit(200)
       .then(({ data }) => { if (alive) setList((data as unknown as Inquiry[]) ?? []); });
@@ -213,9 +262,15 @@ function Inner() {
     <div className="space-y-4">
       {!isAdmin && (
         writing ? (
-          <NewInquiry onCreated={(id) => { setWriting(false); setOpenId(id); reload(); notifyHeader(); }} />
+          <NewInquiry onCreated={(id) => { setWriting(false); setOpenId(id); reload(); notifyHeader(); }} onCancel={() => setWriting(false)} />
         ) : (
-          <button onClick={() => setWriting(true)} className={primary}>💌 새 문의 보내기</button>
+          <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
+            <div>
+              <p className="font-bold">💌 관리자에게 바로 문의하기</p>
+              <p className="mt-1 text-sm text-foreground/70">✏️ 수정 문의 · 👋 탈퇴 문의 · 💬 기타 문의</p>
+            </div>
+            <button onClick={() => setWriting(true)} className={primary}>문의 시작하기</button>
+          </div>
         )
       )}
       {isAdmin && (
@@ -233,6 +288,7 @@ function Inner() {
                 <div>
                   <p className="font-medium">
                     {unread(i) && <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-red-600 align-middle" aria-label="새 메시지" />}
+                    {i.category && <span className="mr-1.5 rounded-full border border-ink bg-white px-2 py-0.5 align-middle text-xs font-bold">{i.category}</span>}
                     {i.title}
                   </p>
                   <p className="mt-1 text-xs text-foreground/60">
