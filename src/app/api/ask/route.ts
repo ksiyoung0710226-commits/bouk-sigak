@@ -82,7 +82,7 @@ export async function POST(req: Request) {
           }
         }
         if (lastErr) throw lastErr;
-      } catch (e) {
+      } catch {
         // AI가 답하지 못하면(무료 사용량 초과 등) 자료 요약으로 대신 답하고 사용량은 돌려줌
         await db.rpc("ai_refund_quota").then(() => {}, () => {});
         controller.enqueue(encoder.encode((wrote ? "\n\n(답이 중간에 끊겼어요. 아래 자료를 함께 확인해 주세요.)\n\n" : "지금은 AI가 바빠서 확인된 자료로 대신 답해 드릴게요.\n\n") + helperAnswer(found)));
