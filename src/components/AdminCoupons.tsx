@@ -89,9 +89,39 @@ export default function AdminCoupons() {
     return () => { alive = false; };
   }, [isAdmin, version]);
 
+  // 퀴즈 참여자만 추첨: 묶음을 고르면 그 퀴즈에 제출한 회원만 대상
+  const [quizSets, setQuizSets] = useState<{ id: number; title: string }[]>([]);
+  const [quizSet, setQuizSet] = useState<number | "">("");
+  const [allCorrect, setAllCorrect] = useState(false);
+  const [quizPeople, setQuizPeople] = useState<{ user_id: string; answered: number; correct: number }[] | null>(null);
+  const [quizTotal, setQuizTotal] = useState(0);
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase.from("quiz_sets").select("id,title").order("created_at", { ascending: false })
+      .then(({ data }) => setQuizSets((data as { id: number; title: string }[]) ?? []));
+  }, [isAdmin, version]);
+  useEffect(() => {
+    let alive = true;
+    if (quizSet === "") return;
+    (async () => {
+      const [{ data }, { count }] = await Promise.all([
+        supabase.rpc("admin_quiz_participants", { sid: quizSet }),
+        supabase.from("quizzes").select("id", { count: "exact", head: true }).eq("set_id", quizSet).eq("published", true),
+      ]);
+      if (!alive) return;
+      setQuizPeople((data as { user_id: string; answered: number; correct: number }[]) ?? []);
+      setQuizTotal(count ?? 0);
+    })();
+    return () => { alive = false; };
+  }, [quizSet, version]);
+  const quizOk = useMemo(() => {
+    if (quizSet === "" || !quizPeople) return null;
+    return new Set(quizPeople.filter((p) => !allCorrect || (quizTotal > 0 && p.correct >= quizTotal)).map((p) => p.user_id));
+  }, [quizSet, quizPeople, allCorrect, quizTotal]);
+
   const candidates = useMemo(
-    () => (members ?? []).filter((m) => groups[m.kind === "teacher" ? "teacher" : "student"] && !excluded.has(m.id)),
-    [members, groups, excluded],
+    () => (members ?? []).filter((m) => groups[m.kind === "teacher" ? "teacher" : "student"] && !excluded.has(m.id) && (!quizOk || quizOk.has(m.id))),
+    [members, groups, excluded, quizOk],
   );
 
   async function removeEvent(ev: Event) {
@@ -144,6 +174,19 @@ export default function AdminCoupons() {
       {!members ? <p className="text-sm text-foreground/60">불러오는 중…</p> : (
         <form onSubmit={draw} className="space-y-4">
           <p className="font-bold">① 추첨 대상 고르기</p>
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border-2 border-ink bg-white/70 p-3 text-sm">
+            <span className="font-medium">✏️ 퀴즈 참여자만:</span>
+            <select className="rounded-lg border border-line bg-white px-2 py-1" value={quizSet} onChange={(e) => setQuizSet(e.target.value ? Number(e.target.value) : "")}>
+              <option value="">사용 안 함 (전체 회원)</option>
+              {quizSets.map((q) => <option key={q.id} value={q.id}>{q.title} 참여자</option>)}
+            </select>
+            {quizSet !== "" && (
+              <>
+                <label className="flex items-center gap-1"><input type="checkbox" checked={allCorrect} onChange={(e) => setAllCorrect(e.target.checked)} /> 모든 문제를 맞힌 사람만</label>
+                <span className="text-xs text-foreground/70">참여 {quizPeople?.length ?? "…"}명{allCorrect && ` · 전부 정답 ${quizOk?.size ?? 0}명`} (문제 {quizTotal}개)</span>
+              </>
+            )}
+          </div>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="font-medium">대상:</span>
             {([["student", "🎓 재학생·예비"], ["teacher", "🧸 교사"]] as const).map(([k, label]) => (
