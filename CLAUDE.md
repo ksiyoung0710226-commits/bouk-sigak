@@ -68,9 +68,10 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 ## 남은 할 일
 1. (2026-11-06 배포 완료) 신고 관리·정지·카카오 알림·약관·비밀번호 찾기. git push 시 Vercel 자동 배포도 됨(프로젝트 2개에 배포됨).
 2. 사용자 작업 대기: ① Gmail 앱 비밀번호 → .env.local에 SMTP_USER/SMTP_PASS → `scripts/setup-email.sh` → 재배포 ② 카카오 개발자 앱 등록 → KAKAO_REST_KEY(및 client secret) Vercel env → 재배포 → 관리자 화면에서 '카카오톡으로 알림 받기 연결'.
-3. 약관·처리방침은 초안. 1:1 채팅 신고·차단 기능은 아직 없음.
+3. 약관·처리방침은 초안. (2026-11-06) 1:1 채팅 신고·차단(016: dm_threads.blocked_by, RPC block_dm/unblock_dm, reports.dm_message_id/dm_thread_id) DB 적용·배포 완료.
 4. 교사 초대코드 변경은 DB `app_secrets` 표(key='teacher_code') 업데이트. 코드는 사용자에게 따로 전달했음.
 5. (선택) 다른 페이지 제목도 로고와 같은 부드러운 글꼴로 맞출지 사용자에게 확인.
 
 ## 작업 환경 메모
+- node/npx는 PATH에 없음: 명령 앞에 `export PATH=~/.local/node22/bin:$PATH` 를 붙일 것.
 - 원래 개발 컴퓨터는 macOS 12라 Playwright 미지원. 화면 캡처는 Chrome for Testing 138 로 했음. 새 컴퓨터에서는 필요 없으면 생략.
