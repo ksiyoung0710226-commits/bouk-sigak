@@ -20,6 +20,8 @@ export default function Login() {
   useEffect(() => {
     const saved = localStorage.getItem(SAVED_EMAIL_KEY);
     if (saved) {
+      // 브라우저 저장소는 화면이 열린 뒤에만 읽을 수 있어 여기서 채움(의도한 동작)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEmail(saved);
       setSaveEmail(true);
     }

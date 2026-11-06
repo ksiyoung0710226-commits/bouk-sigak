@@ -71,12 +71,13 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - 신고 버튼은 글·댓글 모두 닉네임 바로 옆(`AuthorLine` in BoardView). 내 글에는 신고 버튼 없음.
 - 관리자 회원 관리: `/profile` 내 정보 칸 바로 아래 `AdminMembers` 컴포넌트(`src/components/AdminMembers.tsx`, 관리자에게만 렌더링; 헤더 "🛠 회원 관리" → `/profile#admin-members`): 회원 목록(이메일·닉네임·유형·가입일·최근 로그인·글/댓글 수, 검색), 강제 탈퇴(닉네임 입력 확인). DB 함수 `admin_list_members()`, `admin_delete_member(uuid)`(005) — 관리자 여부를 DB가 확인. 본인·다른 관리자는 삭제 불가.
 
-## 남은 할 일
-1. (2026-11-06 배포 완료) 신고 관리·정지·카카오 알림·약관·비밀번호 찾기. git push 시 Vercel 자동 배포도 됨(프로젝트 2개에 배포됨).
-2. Gmail SMTP 설정 완료(2026-11-06). 사용자 작업 대기(선택, 사용자는 메일로 충분하다고 함): 카카오 개발자 앱 등록 → KAKAO_REST_KEY(및 client secret) Vercel env → 재배포 → 관리자 화면에서 '카카오톡으로 알림 받기 연결'.
-3. 약관·처리방침은 초안. (2026-11-06) 관리자 알림은 카카오 미연결 시 Gmail(NOTIFY_EMAIL 또는 SMTP_USER)로(018, 2026-11-06 적용, SMTP 설정 완료). 1:1 채팅 신고·차단(016: dm_threads.blocked_by, RPC block_dm/unblock_dm, reports.dm_message_id/dm_thread_id) DB 적용·배포 완료.
-4. 교사 초대코드 변경은 DB `app_secrets` 표(key='teacher_code') 업데이트. 코드는 사용자에게 따로 전달했음.
-5. (선택) 다른 페이지 제목도 로고와 같은 부드러운 글꼴로 맞출지 사용자에게 확인.
+## 남은 할 일 (2026-11-06 최종 점검 후)
+1. **AI 켜기(사용자 작업)**: Anthropic API 키 → Vercel env `ANTHROPIC_API_KEY`(입력 창으로 받기, 채팅에 쓰지 않게) → 재배포 → /ask 실제 답변 확인. 키 없으면 "준비하고 있어요" 안내만 나옴.
+2. **콘텐츠 교재 대조**: 새 5과목(ece-intro, play-guidance, language-literature, math-science, parent-education, 53단원)은 한 줄씩 검토 안 함. 기존 교재 대조 필요 항목(손 씻기, 아동학대·신고, 보육행정, 프로젝트 접근법 3단계, 이차 정서 시기, 볼비 단계 월령)도 그대로.
+3. 카카오톡 알림은 사용 안 함(코드·DB는 남김, 관리자 화면 `AdminKakao`는 주석 처리, 처리방침 위탁표에서 카카오 제거). 다시 쓰려면 둘 다 되돌리고 KAKAO_REST_KEY 등록.
+4. 아직 안 만든 요청: 관리자 1:1 메시지 → 회원 메일 알림, 내 글 새 댓글 🔔 숫자 알림, 교사 인증(기관 이름 + 관리자 승인) 후에만 Q&A 답변, 1:1 메시지·채팅 사진 첨부, Gmail 'educare insight' 라벨(사용자가 Gmail 필터로).
+5. 사용자가 이미 제출한 링크(GitHub·사이트)는 항상 최신 상태를 보여 줌 — 심사 중이면 큰 변경 전에 사용자에게 확인.
+6. 교사 초대코드 변경은 DB `app_secrets`(key='teacher_code'). 약관·처리방침은 초안.
 
 ## 작업 환경 메모
 - **수정할 때마다 바로 커밋 + `git push`** (사용자 요청, 2026-11-06). push = Vercel 자동 배포이므로 `npx tsc --noEmit` 통과한 단위로만 올릴 것.

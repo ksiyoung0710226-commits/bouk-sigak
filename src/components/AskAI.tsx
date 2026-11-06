@@ -19,13 +19,14 @@ function Rich({ text }: { text: string }) {
   return (
     <div className="space-y-1.5 whitespace-pre-wrap break-words">
       {text.split("\n").map((line, i) => {
-        const parts = line.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\(\/[^)\s]*\))/g);
+        // 사이트 안 주소(/로 시작, //·/\ 는 제외)만 링크로
+        const parts = line.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\(\/(?![\/\\])[^)\s]*\))/g);
         return (
           <p key={i} className={/^\s*[-•]\s/.test(line) ? "pl-3" : /^#{1,4}\s/.test(line) ? "font-bold" : ""}>
             {parts.map((p, k) => {
               const b = p.match(/^\*\*(.+)\*\*$/);
               if (b) return <b key={k}>{b[1]}</b>;
-              const l = p.match(/^\[([^\]]+)\]\((\/[^)\s]*)\)$/);
+              const l = p.match(/^\[([^\]]+)\]\((\/(?![\/\\])[^)\s]*)\)$/);
               if (l) return <Link key={k} href={l[2]} className="font-bold text-brand-dark underline">{l[1]}</Link>;
               return <span key={k}>{p.replace(/^#{1,4}\s/, "")}</span>;
             })}
@@ -79,6 +80,8 @@ export default function AskAI({ initial = "" }: { initial?: string }) {
       }
     } catch {
       setErr("연결이 끊겼어요. 다시 시도해 주세요.");
+      // 받다 만 답이 없으면 빈 말풍선을 지움
+      setTurns((cur) => (cur.length && cur[cur.length - 1].role === "assistant" && !cur[cur.length - 1].content ? cur.slice(0, -1) : cur));
     } finally {
       setBusy(false);
     }

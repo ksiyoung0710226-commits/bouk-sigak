@@ -87,7 +87,12 @@ function NewInquiry({ onCreated, onCancel }: { onCreated: (id: number) => void; 
       .from("inquiry_messages")
       .insert({ inquiry_id: data.id, sender_id: session.user.id, body: body.trim() });
     setBusy(false);
-    if (e2) return setErr("문의 내용을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+    if (e2) {
+      // 문의 방은 만들어졌으니 새로 만들지 말고 그 방을 열어 다시 보내게 함(중복 문의 방지)
+      alert("문의는 만들어졌지만 내용을 저장하지 못했어요. 열리는 화면에서 내용을 다시 보내 주세요.");
+      onCreated(data.id);
+      return;
+    }
     setTitle("");
     setBody("");
     onCreated(data.id);

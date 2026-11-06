@@ -56,7 +56,6 @@ export default function Privacy() {
                 <tr><td className={td}>Vercel Inc. (미국)</td><td className={td}>웹사이트 호스팅</td><td className={td}>접속 기록, 요청 처리 중 거치는 정보 · 미국 등</td></tr>
                 <tr><td className={td}>Google LLC (미국)</td><td className={td}>메일 발송(Gmail): 가입 인증, 비밀번호 재설정, 신고 처리 안내</td><td className={td}>이메일, 닉네임, 메일 내용 · 미국 등</td></tr>
                 <tr><td className={td}>Anthropic, PBC (미국)</td><td className={td}>‘AI에게 질문하기’ 답변 생성(회원이 질문할 때만)</td><td className={td}>질문 내용과 같은 대화의 앞선 질문·답변 · 사이트는 질문 내용을 저장하지 않음 · 미국</td></tr>
-                <tr><td className={td}>(주)카카오 (대한민국)</td><td className={td}>운영자에게 보내는 새 가입·문의·신고 알림(카카오톡)</td><td className={td}>닉네임, 문의 제목·내용 일부, 신고 이유 일부</td></tr>
               </tbody>
             </table>
           </div>

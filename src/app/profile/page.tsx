@@ -5,7 +5,6 @@ import PageTitle from "@/components/PageTitle";
 import RequireAuth from "@/components/RequireAuth";
 import AdminMembers from "@/components/AdminMembers";
 import AdminReports from "@/components/AdminReports";
-import AdminKakao from "@/components/AdminKakao";
 import { useAuth } from "@/components/AuthProvider";
 import { SAVED_EMAIL_KEY, nicknameErrorMessage, supabase, suspensionText } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
@@ -29,13 +28,10 @@ function Message({ msg }: { msg: Msg }) {
 
 function NicknameSection() {
   const { profile, refreshProfile } = useAuth();
-  const [nick, setNick] = useState("");
+  // 처음 값은 지금 닉네임(부모가 닉네임이 바뀌면 key로 새로 그림)
+  const [nick, setNick] = useState(profile?.nickname ?? "");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<Msg>(null);
-
-  useEffect(() => {
-    if (profile) setNick(profile.nickname);
-  }, [profile]);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -89,10 +85,10 @@ function DetailsSection() {
   useEffect(() => {
     if (!profile) return;
     let alive = true;
-    setOrg(profile.teacher_org ?? "");
     supabase.from("profile_details").select("school,major,region,center_type,is_public").eq("user_id", profile.id).maybeSingle()
       .then(({ data }) => {
         if (!alive) return;
+        setOrg(profile.teacher_org ?? "");
         setSchool(data?.school ?? "");
         setMajor(data?.major ?? "");
         setRegion(data?.region ?? "");
@@ -366,9 +362,10 @@ function Inner() {
       </div>
       <AdminMembers />
       <AdminReports />
-      <AdminKakao />
+      {/* 카카오톡 알림은 쓰지 않음(관리자 알림은 Gmail). 다시 쓰려면 아래 주석을 풀고 처리방침 위탁표에 카카오를 다시 넣을 것 */}
+      {/* <AdminKakao /> */}
       <div className="mx-auto max-w-2xl space-y-6">
-        <NicknameSection />
+        <NicknameSection key={profile?.nickname ?? "loading"} />
         <DetailsSection />
         <EmailSection />
         <PasswordSection />

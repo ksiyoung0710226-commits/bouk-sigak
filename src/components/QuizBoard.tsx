@@ -104,7 +104,9 @@ export default function QuizBoard() {
                 ))}
               </div>
 
-              {shown.length === 0 ? <p className="card p-6 text-center text-foreground/70">이 묶음에 문제가 아직 없어요.</p> : (
+              {phaseOf(current) === "upcoming" && !isAdmin ? (
+                <p className="card p-6 text-center text-foreground/70">⏳ 문제는 {fmtDate(current.starts_at)}에 공개돼요.</p>
+              ) : shown.length === 0 ? <p className="card p-6 text-center text-foreground/70">이 묶음에 문제가 아직 없어요.</p> : (
                 <ol className="space-y-4">
                   {shown.map((q, i) => (
                     <QuizCard key={q.id} q={q} n={i + 1} phase={phaseOf(current)} loggedIn={!!session}
@@ -141,8 +143,16 @@ function QuizCard({ q, n, phase, loggedIn, result: saved, stat, onResult, onChan
     const { data, error } = await supabase.rpc(phase === "practice" ? "practice_quiz_answer" : "submit_quiz_answer", args);
     setBusy(false);
     const r = (data as Result[] | null)?.[0];
-    if (error || !r) return setErr(error?.message.includes("closed") ? "이벤트가 마감됐어요. 새로고침하면 연습 모드로 풀 수 있어요." : "제출하지 못했어요. 잠시 후 다시 시도해 주세요.");
-    const full = { ...r, choice: pick, text_answer: text.trim() };
+    if (error || !r) {
+      const m = error?.message ?? "";
+      return setErr(
+        m.includes("closed") ? "이벤트가 마감됐어요. 새로고침하면 연습 모드로 풀 수 있어요."
+        : m.includes("not started") ? "아직 시작 전이에요. 시작 시각 이후에 다시 와 주세요."
+        : m.includes("login") ? "로그인이 풀렸어요. 다시 로그인해 주세요."
+        : "제출하지 못했어요. 잠시 후 다시 시도해 주세요.");
+    }
+    // 이벤트는 서버에 기록된 '처음 제출한 답'을 그대로 표시(다른 탭에서 먼저 낸 경우 포함)
+    const full = phase === "practice" ? { ...r, choice: pick, text_answer: text.trim() } : { ...r, choice: r.choice ?? pick, text_answer: r.text_answer ?? text.trim() };
     if (phase === "practice") setPractice(full); else onResult(full);
   }
 
@@ -293,7 +303,12 @@ function SetManager({ sets, onChange }: { sets: QuizSet[]; onChange: () => void 
                 {fmtDate(s.starts_at)} ~ {s.ends_at ? fmtDate(s.ends_at) : "마감 없음"} {PHASE_LABEL[phaseOf(s)]} · {s.published ? "공개" : "숨김"}
               </span>
               <span className="ml-auto flex gap-3 text-xs">
-                {phaseOf(s) !== "practice" && <button onClick={() => { if (confirm("지금 바로 마감할까요? 마감하면 연습 모드로 바뀌어요.")) patch(s, { ends_at: new Date().toISOString() }); }} className="underline">⏰ 지금 마감</button>}
+                {phaseOf(s) !== "practice" && <button onClick={() => {
+                  if (!confirm("지금 바로 마감할까요? 마감하면 연습 모드로 바뀌어요.")) return;
+                  const now = Date.now();
+                  // 시작 전 묶음이면 시작도 지금으로 당겨서 '마감 > 시작'을 지킴
+                  patch(s, phaseOf(s) === "upcoming" ? { starts_at: new Date(now - 60_000).toISOString(), ends_at: new Date(now).toISOString() } : { ends_at: new Date(now).toISOString() });
+                }} className="underline">⏰ 지금 마감</button>}
                 <button onClick={() => patch(s, { published: !s.published })} className="underline">{s.published ? "🙈 숨기기" : "👀 공개"}</button>
                 <button onClick={() => remove(s)} className="text-red-700 underline">🗑 지우기</button>
               </span>
@@ -307,7 +322,8 @@ function SetManager({ sets, onChange }: { sets: QuizSet[]; onChange: () => void 
 
 function QuizEditor({ sets, defaultSet, onSaved }: { sets: QuizSet[]; defaultSet: number | null; onSaved: () => void }) {
   const { profile } = useAuth();
-  const [setId, setSetId] = useState<number>(defaultSet ?? sets[0].id);
+  const [picked, setSetId] = useState<number>(defaultSet ?? sets[0].id);
+  const setId = sets.some((s) => s.id === picked) ? picked : sets[0].id; // 지운 묶음이면 첫 묶음으로
   const [qtype, setQtype] = useState<"choice" | "short">("choice");
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [question, setQuestion] = useState("");

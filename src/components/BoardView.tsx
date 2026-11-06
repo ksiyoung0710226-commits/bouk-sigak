@@ -54,6 +54,8 @@ export default function BoardView({
     setLoaded(true);
   }, [board]);
 
+  // 화면이 열리면 글/댓글을 불러옴(상태는 응답이 온 뒤에 바뀜)
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   async function submit(e: React.FormEvent) {
@@ -320,6 +322,8 @@ function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: bo
       .order("created_at");
     setItems((data as unknown as Comment[]) ?? []);
   }, [postId]);
+  // 화면이 열리면 글/댓글을 불러옴(상태는 응답이 온 뒤에 바뀜)
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   async function add(e: React.FormEvent) {

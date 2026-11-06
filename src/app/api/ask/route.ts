@@ -19,7 +19,8 @@ export async function POST(req: Request) {
   const raw: unknown[] = Array.isArray(body?.messages) ? body.messages : [];
   const turns: Turn[] = raw
     .filter((m): m is Turn => !!m && typeof m === "object" && ((m as Turn).role === "user" || (m as Turn).role === "assistant") && typeof (m as Turn).content === "string")
-    .map((m) => ({ role: m.role, content: m.content.trim().slice(0, MAX_CHARS) }))
+    // 이전 AI 답변은 짧게만 다시 보냄(조작된 긴 답으로 지시문을 흔들지 못하게)
+    .map((m) => ({ role: m.role, content: m.content.trim().slice(0, m.role === "assistant" ? 1000 : MAX_CHARS) }))
     .filter((m) => m.content)
     .slice(-MAX_TURNS);
   // 첫 메시지는 user, 마지막도 user여야 함
@@ -29,8 +30,13 @@ export async function POST(req: Request) {
   }
 
   // 로그인 확인 + 하루 사용량 차감(DB 함수가 회원 토큰으로 확인)
-  const { data: left, error: qErr } = await userClient(req).rpc("ai_take_quota", { max_count: DAILY_LIMIT });
-  if (qErr) return Response.json({ error: "로그인한 회원만 AI에게 질문할 수 있어요." }, { status: 401 });
+  const db = userClient(req);
+  const { data: left, error: qErr } = await db.rpc("ai_take_quota", { max_count: DAILY_LIMIT });
+  if (qErr) {
+    const needLogin = /login|jwt|auth|permission denied/i.test(qErr.message);
+    if (!needLogin) console.error("ai_take_quota", qErr.message);
+    return Response.json({ error: needLogin ? "로그인한 회원만 AI에게 질문할 수 있어요." : "잠시 후 다시 시도해 주세요." }, { status: needLogin ? 401 : 500 });
+  }
   if (left === -1) return Response.json({ error: `오늘 질문 횟수(${DAILY_LIMIT}번)를 다 썼어요. 내일 다시 물어봐 주세요.` }, { status: 429 });
 
   // 질문(직전 질문 포함)과 관련 있는 사이트 단원 전문을 골라 마지막 질문 앞에 붙인다
@@ -75,6 +81,8 @@ export async function POST(req: Request) {
           controller.enqueue(encoder.encode("\n\n(답이 길어서 여기까지 보여 드렸어요. 더 궁금한 부분을 이어서 물어봐 주세요.)"));
         }
       } catch (e) {
+        // 답을 못 만들었으면 오늘 사용량 1회를 돌려줌
+        await db.rpc("ai_refund_quota").then(() => {}, () => {});
         if (e instanceof Anthropic.RateLimitError) {
           controller.enqueue(encoder.encode("\n\n지금 질문이 많아요. 잠시 후 다시 물어봐 주세요."));
         } else {

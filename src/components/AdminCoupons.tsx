@@ -93,8 +93,8 @@ export default function AdminCoupons() {
   const [quizSets, setQuizSets] = useState<{ id: number; title: string }[]>([]);
   const [quizSet, setQuizSet] = useState<number | "">("");
   const [allCorrect, setAllCorrect] = useState(false);
-  const [quizPeople, setQuizPeople] = useState<{ user_id: string; answered: number; correct: number }[] | null>(null);
-  const [quizTotal, setQuizTotal] = useState(0);
+  // 불러온 결과를 묶음 id와 함께 보관 → 묶음을 바꾸면 예전 결과를 절대 쓰지 않음
+  const [quizData, setQuizData] = useState<{ sid: number; people: { user_id: string; answered: number; correct: number }[]; total: number; failed: boolean } | null>(null);
   useEffect(() => {
     if (!isAdmin) return;
     supabase.from("quiz_sets").select("id,title").order("created_at", { ascending: false })
@@ -104,20 +104,26 @@ export default function AdminCoupons() {
     let alive = true;
     if (quizSet === "") return;
     (async () => {
-      const [{ data }, { count }] = await Promise.all([
+      const [{ data, error }, { count, error: e2 }] = await Promise.all([
         supabase.rpc("admin_quiz_participants", { sid: quizSet }),
         supabase.from("quizzes").select("id", { count: "exact", head: true }).eq("set_id", quizSet).eq("published", true),
       ]);
       if (!alive) return;
-      setQuizPeople((data as { user_id: string; answered: number; correct: number }[]) ?? []);
-      setQuizTotal(count ?? 0);
+      setQuizData({ sid: quizSet, people: (data as { user_id: string; answered: number; correct: number }[]) ?? [], total: count ?? 0, failed: !!(error || e2) });
     })();
     return () => { alive = false; };
   }, [quizSet, version]);
+  const quizReady = quizSet !== "" && quizData?.sid === quizSet && !quizData.failed ? quizData : null;
+  const quizLoading = quizSet !== "" && quizData?.sid !== quizSet;
+  const quizFailed = quizSet !== "" && quizData?.sid === quizSet && quizData.failed;
+  const quizPeople = quizReady?.people ?? null;
+  const quizTotal = quizReady?.total ?? 0;
+  // 퀴즈 필터를 켰는데 아직 못 불러왔으면 빈 집합 → 대상 0명(엉뚱한 사람이 뽑히지 않게)
   const quizOk = useMemo(() => {
-    if (quizSet === "" || !quizPeople) return null;
-    return new Set(quizPeople.filter((p) => !allCorrect || (quizTotal > 0 && p.correct >= quizTotal)).map((p) => p.user_id));
-  }, [quizSet, quizPeople, allCorrect, quizTotal]);
+    if (quizSet === "") return null;
+    if (!quizReady) return new Set<string>();
+    return new Set(quizReady.people.filter((p) => !allCorrect || (quizReady.total > 0 && p.correct >= quizReady.total)).map((p) => p.user_id));
+  }, [quizSet, quizReady, allCorrect]);
 
   const candidates = useMemo(
     () => (members ?? []).filter((m) => groups[m.kind === "teacher" ? "teacher" : "student"] && !excluded.has(m.id) && (!quizOk || quizOk.has(m.id))),
@@ -143,6 +149,8 @@ export default function AdminCoupons() {
   async function draw(e: React.FormEvent) {
     e.preventDefault();
     setErr("");
+    if (quizLoading) return setErr("퀴즈 참여자를 불러오는 중이에요. 잠시 후 다시 눌러 주세요.");
+    if (quizFailed) return setErr("퀴즈 참여자를 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.");
     if (candidates.length === 0) return setErr("추첨 대상 회원이 없어요.");
     if (count < 1 || count > candidates.length) return setErr(`당첨 인원은 1명부터 ${candidates.length}명까지 정할 수 있어요.`);
     if (!confirm(`추첨 대상 ${candidates.length}명 중 ${count}명을 무작위로 뽑을까요?\n추첨 결과는 기록으로 남고 다시 뽑을 수 없어요.`)) return;
@@ -183,7 +191,9 @@ export default function AdminCoupons() {
             {quizSet !== "" && (
               <>
                 <label className="flex items-center gap-1"><input type="checkbox" checked={allCorrect} onChange={(e) => setAllCorrect(e.target.checked)} /> 모든 문제를 맞힌 사람만</label>
-                <span className="text-xs text-foreground/70">참여 {quizPeople?.length ?? "…"}명{allCorrect && ` · 전부 정답 ${quizOk?.size ?? 0}명`} (문제 {quizTotal}개)</span>
+                <span className="text-xs text-foreground/70">
+                  {quizLoading ? "불러오는 중…" : quizFailed ? "⚠️ 불러오지 못했어요" : <>참여 {quizPeople?.length ?? 0}명{allCorrect && ` · 전부 정답 ${quizOk?.size ?? 0}명`} (공개 문제 {quizTotal}개)</>}
+                </span>
               </>
             )}
           </div>
