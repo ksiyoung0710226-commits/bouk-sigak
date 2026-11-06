@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="보육시각 마스코트: 여자아이, 선생님, 남자아이">
+  <defs>
+    <clipPath id="c"><circle cx="100" cy="100" r="96"/></clipPath>
+  </defs>
+  <circle cx="100" cy="100" r="96" fill="#fff1b0"/>
+  <g clip-path="url(#c)">
+    <!-- 선생님 (가운데) -->
+    <rect x="91" y="100" width="18" height="28" rx="6" fill="#F5CFAE"/>
+    <path d="M62 200 C62 150 76 124 100 124 C124 124 138 150 138 200 Z" fill="#C9B9E8"/>
+    <path d="M88 125 L100 140 L112 125 Z" fill="#fff8e0"/>
+    <path d="M70 84 C68 52 84 42 100 42 C116 42 132 52 130 84 C133 100 127 108 122 106 L78 106 C73 108 67 100 70 84 Z" fill="#29251F"/>
+    <circle cx="100" cy="82" r="26" fill="#FFE2C6"/>
+    <path d="M75 78 C75 58 87 52 100 52 C115 52 126 60 125 78 C117 71 110 64 105 60 C99 69 87 75 75 78 Z" fill="#29251F"/>
+    <circle cx="90" cy="86" r="3.2" fill="#29251F"/>
+    <circle cx="110" cy="86" r="3.2" fill="#29251F"/>
+    <path d="M95 95 Q100 100 105 95" fill="none" stroke="#29251F" stroke-width="2.6" stroke-linecap="round"/>
+    <ellipse cx="83" cy="94" rx="4.6" ry="2.8" fill="#F6A9BC" opacity=".75"/>
+    <ellipse cx="117" cy="94" rx="4.6" ry="2.8" fill="#F6A9BC" opacity=".75"/>
+
+    <!-- 여자아이 (왼쪽, 라임 옷, 양갈래) -->
+    <rect x="33" y="134" width="10" height="20" rx="4" fill="#F5CFAE"/>
+    <path d="M6 200 C6 166 18 150 38 150 C58 150 70 166 70 200 Z" fill="#D8EC77"/>
+    <circle cx="17" cy="108" r="7" fill="#6B4A33"/>
+    <circle cx="59" cy="108" r="7" fill="#6B4A33"/>
+    <circle cx="38" cy="120" r="21" fill="#FFE2C6"/>
+    <path d="M17 116 C16 100 27 94 38 94 C51 94 60 102 59 116 C51 110 45 106 41 102 C36 110 27 114 17 116 Z" fill="#6B4A33"/>
+    <circle cx="31" cy="123" r="2.8" fill="#29251F"/>
+    <circle cx="45" cy="123" r="2.8" fill="#29251F"/>
+    <path d="M34 131 Q38 135.5 42 131" fill="none" stroke="#29251F" stroke-width="2.2" stroke-linecap="round"/>
+    <ellipse cx="25" cy="130" rx="4" ry="2.4" fill="#F6A9BC" opacity=".75"/>
+    <ellipse cx="51" cy="130" rx="4" ry="2.4" fill="#F6A9BC" opacity=".75"/>
+
+    <!-- 남자아이 (오른쪽, 하늘색 옷, 짧은 머리) -->
+    <rect x="157" y="134" width="10" height="20" rx="4" fill="#F5CFAE"/>
+    <path d="M130 200 C130 166 142 150 162 150 C182 150 194 166 194 200 Z" fill="#a8dcff"/>
+    <circle cx="162" cy="120" r="21" fill="#FFE2C6"/>
+    <path d="M140 118 C138 98 150 92 162 92 C176 92 186 100 184 118 C180 108 174 104 166 104 C158 108 148 110 140 118 Z" fill="#3B2A1E"/>
+    <path d="M160 93 Q164 84 170 90" fill="none" stroke="#3B2A1E" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="155" cy="123" r="2.8" fill="#29251F"/>
+    <circle cx="169" cy="123" r="2.8" fill="#29251F"/>
+    <path d="M158 131 Q162 135.5 166 131" fill="none" stroke="#29251F" stroke-width="2.2" stroke-linecap="round"/>
+    <ellipse cx="149" cy="130" rx="4" ry="2.4" fill="#F6A9BC" opacity=".75"/>
+    <ellipse cx="175" cy="130" rx="4" ry="2.4" fill="#F6A9BC" opacity=".75"/>
+  </g>
+</svg>

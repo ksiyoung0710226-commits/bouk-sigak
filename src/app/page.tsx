@@ -12,7 +12,11 @@ export default function Home() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <section className="panel-lav p-10 text-center shadow-[5px_5px_0_var(--ink)]">
-        <h1 className="logo-font text-6xl sm:text-7xl">보육시각</h1>
+        <h1 className="logo-font flex items-center justify-center gap-3 text-6xl sm:text-7xl">
+          보육시각
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/mascot.svg" alt="" aria-hidden width={88} height={88} className="h-16 w-16 sm:h-[88px] sm:w-[88px]" />
+        </h1>
         <p className="mt-4 text-lg">
           아동보육과 재학생과 현장 보육교사가
           <br />

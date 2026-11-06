@@ -12,8 +12,9 @@ export default function Header() {
     <header className="sticky top-0 z-10 border-b-2 border-ink bg-background/95 backdrop-blur">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3">
         <Link href="/" className="flex items-center gap-1.5" aria-label="보육시각 홈">
-          <span aria-hidden className="text-xl">🌱</span>
           <span className="logo-font text-3xl">보육시각</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/mascot.svg" alt="" aria-hidden width={40} height={40} className="h-10 w-10" />
         </Link>
         <nav className="flex flex-wrap items-center gap-4 text-sm font-medium">
           {!loading &&
