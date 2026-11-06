@@ -19,7 +19,7 @@ export default function Qna() {
         <TeacherCode />
         <BoardView
           board="qna"
-          categories={["실습", "보육과정·수업", "놀이·교재교구", "영유아 지도·발달", "부모 소통", "취업·진로", "기타"]}
+          categories={["예비 재학생", "실습", "보육과정·수업", "놀이·교재교구", "영유아 지도·발달", "부모 소통", "취업·진로", "기타"]}
           canWrite
         />
       </>
