@@ -7,7 +7,8 @@ import { AI_SYSTEM, helperAnswer, materialText, retrieve, sourcesOf } from "@/li
 // GEMINI_API_KEY가 없거나 무료 사용량을 넘으면 '지식 도우미'(자료 요약)로 대신 답한다.
 export const maxDuration = 60;
 const DAILY_LIMIT = 10;
-const MODEL = "gemini-3.8-flash";
+// 무료 요금제 모델. 앞의 모델이 바쁘거나(503) 한도를 넘으면(429) 다음 모델로 넘어감
+const MODELS = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"];
 
 const enc = (v: unknown) => Buffer.from(JSON.stringify(v), "utf8").toString("base64");
 
@@ -55,23 +56,33 @@ export async function POST(req: Request) {
     async start(controller) {
       let wrote = false;
       try {
-        const stream = await ai.interactions.create({
-          model: MODEL,
-          system_instruction: AI_SYSTEM,
-          input,
-          store: false,
-          stream: true,
-          generation_config: { thinking_level: "low", max_output_tokens: 1500 },
-        });
-        for await (const event of stream) {
-          if (event.event_type === "step.delta" && event.delta.type === "text" && event.delta.text) {
-            controller.enqueue(encoder.encode(event.delta.text));
-            wrote = true;
+        let lastErr: unknown = null;
+        for (const model of MODELS) {
+          try {
+            const stream = await ai.interactions.create({
+              model,
+              system_instruction: AI_SYSTEM,
+              input,
+              store: false,
+              stream: true,
+              generation_config: { thinking_level: "low", max_output_tokens: 1500 },
+            });
+            for await (const event of stream) {
+              if (event.event_type === "step.delta" && event.delta.type === "text" && event.delta.text) {
+                controller.enqueue(encoder.encode(event.delta.text));
+                wrote = true;
+              }
+            }
+            if (wrote) { lastErr = null; break; }
+            lastErr = new Error(`empty answer from ${model}`);
+          } catch (e) {
+            lastErr = e;
+            console.error("ask gemini", model, e instanceof Error ? e.message : e);
+            if (wrote) break; // 이미 답을 쓰기 시작했으면 다른 모델로 이어 쓰지 않음
           }
         }
-        if (!wrote) throw new Error("empty answer");
+        if (lastErr) throw lastErr;
       } catch (e) {
-        console.error("ask gemini", e instanceof Error ? e.message : e);
         // AI가 답하지 못하면(무료 사용량 초과 등) 자료 요약으로 대신 답하고 사용량은 돌려줌
         await db.rpc("ai_refund_quota").then(() => {}, () => {});
         controller.enqueue(encoder.encode((wrote ? "\n\n(답이 중간에 끊겼어요. 아래 자료를 함께 확인해 주세요.)\n\n" : "지금은 AI가 바빠서 확인된 자료로 대신 답해 드릴게요.\n\n") + helperAnswer(found)));
