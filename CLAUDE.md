@@ -18,7 +18,7 @@ Next.js(App Router, 이 버전은 기존 지식과 다름. AGENTS.md 지시대�
 - `src/lib/curriculum.ts` : 교육부 고시문(제2024-23호) 원문에서 그대로 옮긴 보육과정 내용범주·내용. 문구를 임의로 바꾸지 말 것.
 - `src/app/knowledge/[subject]/[unit]` : 과목 → 단원 화면.
 - `/curriculum` : [년도별 | 표준보육과정 | 누리과정] 탭(`CurriculumTabs`). 개정 이력은 `src/lib/curriculum-history.ts`(1차~2024 개정 표준보육과정, 5세·3~5세·2015·2019 누리과정, 공식 자료로 확인한 사실만, 미확인 날짜는 null). **현재 적용 중 = 시행일이 오늘(KST) 이전인 최신 판**(페이지가 1시간마다 재계산) → 그 판만 원문(fullText, curriculum.ts) 표시, 나머지는 요약. 새 개정판이 나오면 history에 시행일과 함께 추가하고 원문을 curriculum.ts에 넣어 fullText로 연결(사용자 요청: '현재 적용 과정은 항상 원문, 그때그때 다르게'). law.go.kr 행정규칙 페이지는 스크립트로 열려 출처로 못 씀.
-- 커뮤니티/Q&A/가입/로그인: `src/components/BoardView.tsx`, `SignupForm.tsx`, `AuthProvider.tsx` 등. 커뮤니티와 Q&A는 **로그인한 회원만 볼 수 있고** 이는 DB 보안 규칙(RLS)이 강제함.
+- 커뮤니티/Q&A/가입/로그인: `src/components/BoardView.tsx`, `SignupForm.tsx`, `AuthProvider.tsx` 등. 커뮤니티와 Q&A는 **비회원도 읽기 가능**(017, 과제 제출용으로 사용자 요청: anon에 posts/comments 및 profiles(id,nickname,kind,teacher_verified)·공개 profile_details 열만 select 허용). 글·댓글·신고·채팅은 회원만(RLS). 되돌리려면 017의 anon 정책·grant 제거 + community/qna 페이지에 RequireAuth 복구.
 - Q&A `/qna` (예전 '교사 노하우' `/tips` → 리다이렉트, 006에서 board 'tips'→'qna'): 모든 회원이 질문·답변 가능. 답변 = comments. 인증 교사(kind=teacher & teacher_verified) 답변에 '✅ 인증 교사 답변' 표시. 미인증 교사에게만 TeacherCode 입력칸 노출.
 - 보육 뉴스 `/news`: `src/lib/news.ts`가 구글 뉴스 RSS(보육/어린이집/보육교사/영유아, 최근 7일) 제목·언론사·날짜·링크만 가져와 `use cache` + cacheLife(revalidate 5분)로 갱신. 기사 본문은 가져오지 않음. 링크는 news.google.com만 허용.
 - 1:1 문의 `/inquiry` (007): 테이블 inquiries + inquiry_messages. 회원은 자기 문의만, 관리자는 전체(RLS). 메시지 insert 트리거가 status(open/answered)와 admin_unread/user_unread 갱신. RPC `mark_inquiry_read`, `set_inquiry_closed`. 헤더 `InquiryLink`: 비로그인·일반회원 '💌 문의하기'(로그인/로그아웃 옆), 관리자 '📮 문의함' + 안 읽은 수 배지(1분마다·포커스 시 확인). 관리자에게는 카카오톡 알림(아래).

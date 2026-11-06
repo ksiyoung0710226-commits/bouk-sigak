@@ -1,7 +1,6 @@
 "use client";
 
 import PageTitle from "@/components/PageTitle";
-import RequireAuth from "@/components/RequireAuth";
 import BoardView from "@/components/BoardView";
 import TeacherCode from "@/components/TeacherCode";
 
@@ -16,14 +15,14 @@ export default function Qna() {
         📢 공지 ·{" "}
         <span className="hl-blue">답변을 해 주시는 분들께는 매달 2명씩 추첨하여 스타벅스 5천 원 쿠폰을 지급해 드립니다.</span>
       </p>
-      <RequireAuth>
+      <>
         <TeacherCode />
         <BoardView
           board="qna"
           categories={["실습", "보육과정·수업", "놀이·교재교구", "영유아 지도·발달", "부모 소통", "취업·진로", "기타"]}
           canWrite
         />
-      </RequireAuth>
+      </>
     </div>
   );
 }

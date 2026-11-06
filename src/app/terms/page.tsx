@@ -34,7 +34,7 @@ export default function Terms() {
         <Article n={4} title="게시물">
           <ol className="list-decimal space-y-1 pl-5">
             <li>게시물의 권리와 책임은 작성한 회원에게 있습니다. 사이트는 서비스 화면에 게시물을 보여 주는 범위에서만 이용합니다.</li>
-            <li>커뮤니티·Q&A 게시물은 로그인한 회원에게만 공개됩니다.</li>
+            <li>커뮤니티·Q&A 게시물은 누구나 읽을 수 있으며, 글·댓글 작성은 로그인한 회원만 할 수 있습니다.</li>
             <li>제3조를 어긴 게시물은 신고 또는 운영자 판단으로 예고 없이 삭제될 수 있습니다.</li>
           </ol>
         </Article>

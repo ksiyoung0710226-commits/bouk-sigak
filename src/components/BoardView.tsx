@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useCallback, useEffect, useState } from "react";
 import { supabase, suspensionText } from "@/lib/supabase";
 import { useAuth } from "./AuthProvider";
@@ -37,6 +39,7 @@ export default function BoardView({
   const [msg, setMsg] = useState("");
   const [reporting, setReporting] = useState<{ kind: "post_id" | "comment_id"; id: number; nickname: string } | null>(null);
   const suspended = suspensionText(profile?.suspended_until);
+  const writable = canWrite && !!session;
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -87,7 +90,7 @@ export default function BoardView({
   return (
     <div>
       <p className="mb-4 note p-3 text-sm">
-        🔒 가입한 회원에게만 보이는 공간이에요. <b>아동·학부모·기관의 실명이나 개인정보는 쓰지 말아 주세요.</b>
+        누구나 읽을 수 있고, 글쓰기·댓글은 가입한 회원만 할 수 있어요. <b>아동·학부모·기관의 실명이나 개인정보는 쓰지 말아 주세요.</b>
       </p>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap gap-2">
@@ -96,7 +99,7 @@ export default function BoardView({
               className={`rounded-full px-3 py-1 text-sm ${filter === c ? "bg-brand text-white" : "bg-soft"}`}>{c}</button>
           ))}
         </div>
-        {canWrite && !suspended && (
+        {writable && !suspended && (
           <button onClick={() => setWriting((v) => !v)} className="rounded-full bg-brand px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-dark">
             {writing ? "닫기" : qna ? "🙋 질문하기" : "✏️ 글쓰기"}
           </button>
@@ -107,7 +110,8 @@ export default function BoardView({
           ⛔ 운영 규칙 위반으로 <b>{suspended}</b> 중이에요. 그동안 글·댓글·1:1 채팅을 쓸 수 없어요(읽기는 가능). 궁금한 점은 ‘💌 문의하기’로 알려 주세요.
         </p>
       )}
-      {!canWrite && writeHint}
+      {!session && <LoginHint what={qna ? "질문" : "글"} />}
+      {session && !canWrite && writeHint}
 
       {writing && (
         <form onSubmit={submit} className="mb-6 space-y-3 card p-5">
@@ -143,7 +147,7 @@ export default function BoardView({
                 <p className="mt-1 line-clamp-2 text-sm text-foreground/70">{p.body}</p>
               </button>
               <AuthorLine author={p.profiles} userId={p.author_id} createdAt={p.created_at}
-                onReport={p.author_id === session?.user.id ? undefined : () => report("post_id", p.id, p.profiles?.nickname)} />
+                onReport={!session || p.author_id === session.user.id ? undefined : () => report("post_id", p.id, p.profiles?.nickname)} />
             </li>
           ))}
         </ul>
@@ -159,7 +163,7 @@ export default function BoardView({
           </h2>
           <div className="mt-2">
             <AuthorLine author={openPost.profiles} userId={openPost.author_id} createdAt={openPost.created_at}
-              onReport={openPost.author_id === session?.user.id ? undefined : () => report("post_id", openPost.id, openPost.profiles?.nickname)} />
+              onReport={!session || openPost.author_id === session.user.id ? undefined : () => report("post_id", openPost.id, openPost.profiles?.nickname)} />
           </div>
           <p className="mt-6 whitespace-pre-wrap text-base leading-relaxed">{openPost.body}</p>
           {(openPost.author_id === session?.user.id || profile?.is_admin) && (
@@ -310,7 +314,7 @@ function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: bo
           <li key={c.id} className={`note p-3 text-sm ${isTeacherAnswer(c) ? "border-2 border-ink" : ""}`}>
             {isTeacherAnswer(c) && <p className="mb-1 text-xs font-bold"><span className="kw">✅ 인증 교사 답변</span></p>}
             <AuthorLine author={c.profiles} userId={c.author_id} createdAt={c.created_at}
-              onReport={c.author_id === session?.user.id ? undefined : () => onReport(c.id, c.profiles?.nickname)} />
+              onReport={!session || c.author_id === session.user.id ? undefined : () => onReport(c.id, c.profiles?.nickname)} />
             <p className="whitespace-pre-wrap">{c.body}</p>
             {(c.author_id === session?.user.id || profile?.is_admin) && (
               <div className="mt-1 flex gap-3 text-xs">
@@ -321,7 +325,11 @@ function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: bo
         ))}
       </ul>
       {err && <p className="mt-2 text-sm text-red-700">{err}</p>}
-      {suspended ? (
+      {!session ? (
+        <p className="mt-3 text-sm text-foreground/70">
+          <Link href="/login" className="font-medium underline">로그인</Link>하면 {qna ? "답변" : "댓글"}을 남길 수 있어요.
+        </p>
+      ) : suspended ? (
         <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">⛔ {suspended} 중이라 {qna ? "답변" : "댓글"}을 쓸 수 없어요.</p>
       ) : (
       <form onSubmit={add} className="mt-3 flex gap-2">
@@ -350,6 +358,16 @@ function AuthorLine({
         </button>
       )}
       <span>· {kindLabel(kind)}{kind === "teacher" && author?.teacher_verified ? " ✅" : ""}{info ? ` · ${info}` : ""} · {when(createdAt)}</span>
+    </p>
+  );
+}
+
+function LoginHint({ what }: { what: string }) {
+  return (
+    <p className="mb-4 card-sm p-3 text-sm">
+      ✏️ {what}을 쓰려면{" "}
+      <Link href="/login" className="font-medium underline">로그인</Link> 또는{" "}
+      <Link href="/signup" className="font-medium underline">회원가입</Link>을 해 주세요.
     </p>
   );
 }
