@@ -9,7 +9,7 @@ import AdminKakao from "@/components/AdminKakao";
 import { useAuth } from "@/components/AuthProvider";
 import { SAVED_EMAIL_KEY, nicknameErrorMessage, supabase, suspensionText } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
-import { STUDENT_NO_RE } from "@/lib/member-info";
+import { STUDENT_NO_RE, kindLabel } from "@/lib/member-info";
 import SchoolPicker from "@/components/SchoolPicker";
 import CenterPicker from "@/components/CenterPicker";
 
@@ -73,7 +73,8 @@ function NicknameSection() {
 }
 
 function DetailsSection() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
+  const [org, setOrg] = useState("");
   const [school, setSchool] = useState("");
   const [major, setMajor] = useState("");
   const [studentNo, setStudentNo] = useState("");
@@ -88,6 +89,7 @@ function DetailsSection() {
   useEffect(() => {
     if (!profile) return;
     let alive = true;
+    setOrg(profile.teacher_org ?? "");
     supabase.from("profile_details").select("school,major,region,center_type,is_public").eq("user_id", profile.id).maybeSingle()
       .then(({ data }) => {
         if (!alive) return;
@@ -108,9 +110,15 @@ function DetailsSection() {
     if (!profile) return;
     setMsg(null);
     if (!teacher && (!school.trim() || !major.trim())) return setMsg({ ok: false, text: "재학 중인 학교와 학과를 골라 주세요." });
-    if (teacher && (!region || !centerType)) return setMsg({ ok: false, text: "근무 지역과 어린이집 유형을 골라 주세요." });
+    if (teacher && !org) return setMsg({ ok: false, text: "어린이집 교사인지 유치원 교사인지 골라 주세요." });
+    if (teacher && (!region || !centerType)) return setMsg({ ok: false, text: `근무 지역과 ${org} 종류를 골라 주세요.` });
     if (!teacher && studentNo.trim() && !STUDENT_NO_RE.test(studentNo.trim())) return setMsg({ ok: false, text: "학번은 입학 연도 숫자 두 자리로 적어 주세요. (예: 24)" });
     setBusy(true);
+    if (teacher && org !== profile.teacher_org) {
+      const { error: orgErr } = await supabase.from("profiles").update({ teacher_org: org }).eq("id", profile.id);
+      if (orgErr) { setBusy(false); return setMsg({ ok: false, text: "근무 기관을 저장하지 못했어요. 잠시 후 다시 시도해 주세요." }); }
+      await refreshProfile();
+    }
     const row = teacher
       ? { school: null, major: null, region, center_type: centerType, is_public: isPublic }
       : { school: school.trim(), major: major.trim(), region: null, center_type: null, is_public: isPublic };
@@ -131,13 +139,20 @@ function DetailsSection() {
     setMsg({ ok: true, text: isPublic ? "저장했어요. 다른 회원에게 공개돼요." : "저장했어요. 나와 관리자만 볼 수 있어요." });
   }
 
+  if (profile?.kind === "prospective")
+    return (
+      <div className="card p-6 text-sm">
+        <h2 className="text-xl">🌱 예비 재학생</h2>
+        <p className="mt-2 text-foreground/75">예비 재학생은 학교 정보를 따로 받지 않아요. 입학한 뒤 재학생으로 바꾸고 싶으면 ‘💌 문의하기’로 알려 주세요.</p>
+      </div>
+    );
   if (!loaded) return null;
   return (
     <form onSubmit={save} className="card space-y-3 p-6">
       <h2 className="text-xl">{teacher ? "근무 정보" : "학교 정보"}</h2>
       {teacher ? (
-        <CenterPicker region={region} centerType={centerType}
-          onChange={(v) => { setRegion(v.region); setCenterType(v.centerType); }} />
+        <CenterPicker org={org} region={region} centerType={centerType}
+          onChange={(v) => { setOrg(v.org); setRegion(v.region); setCenterType(v.centerType); }} />
       ) : (
         <div className="text-sm">
           <span className="mb-1 block font-medium">재학 중인 학교와 학과</span>
@@ -343,7 +358,7 @@ function Inner() {
   return (
     <div className="space-y-6">
       <div className="panel-lav p-5 text-sm">
-        <p><b>{profile?.nickname}</b> · {profile?.kind === "teacher" ? "현장교사" : "재학생"}{profile?.is_admin ? " · 관리자" : ""}</p>
+        <p><b>{profile?.nickname}</b> · {kindLabel(profile?.kind, profile?.teacher_org)}{profile?.is_admin ? " · 관리자" : ""}</p>
         <p className="mt-1 text-foreground/75">{session?.user.email}</p>
         {suspensionText(profile?.suspended_until) && (
           <p className="mt-2 font-bold text-red-700">⛔ {suspensionText(profile?.suspended_until)} 중 (글·댓글·채팅 쓰기 제한)</p>

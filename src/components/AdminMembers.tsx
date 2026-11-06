@@ -25,13 +25,14 @@ type Member = {
   region: string | null;
   center_type: string | null;
   info_public: boolean;
+  teacher_org: string | null;
 };
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString("ko-KR") : "-");
 
 function kindLabel(m: Member) {
-  if (m.kind === "teacher") return m.teacher_verified ? "현장교사(인증)" : "현장교사(미인증)";
-  return "재학생";
+  if (m.kind === "teacher") return `${m.teacher_org ?? "현장"} 교사${m.teacher_verified ? "(인증)" : "(미인증)"}`;
+  return m.kind === "prospective" ? "예비 재학생" : "재학생";
 }
 
 function MessageBox({ m, onClose }: { m: Member; onClose: () => void }) {
@@ -146,7 +147,7 @@ export default function AdminMembers() {
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!members) return [];
-    return s ? members.filter((m) => m.nickname.toLowerCase().includes(s) || m.email.toLowerCase().includes(s) || detailsLabel(m.kind, m).toLowerCase().includes(s) || (m.student_no ?? "").toLowerCase().includes(s)) : members;
+    return s ? members.filter((m) => m.nickname.toLowerCase().includes(s) || m.email.toLowerCase().includes(s) || detailsLabel(m.kind, m, m.teacher_org).toLowerCase().includes(s) || (m.student_no ?? "").toLowerCase().includes(s)) : members;
   }, [members, q]);
 
   if (loading || !profile?.is_admin) return null;
@@ -174,7 +175,7 @@ export default function AdminMembers() {
         onChange={(e) => setQ(e.target.value)}
       />
       <div className="grid gap-4 md:grid-cols-2">
-        {([["student", "🎓 재학생"], ["teacher", "🧸 현장교사"]] as const).map(([k, label]) => {
+        {([["student", "🎓 재학생·예비 재학생"], ["teacher", "🧸 교사 (어린이집·유치원)"]] as const).map(([k, label]) => {
           const list = shown.filter((m) => (m.kind === "teacher" ? "teacher" : "student") === k);
           return (
             <div key={k} className="rounded-2xl border-2 border-ink bg-background/60 p-3">
@@ -192,9 +193,9 @@ export default function AdminMembers() {
                       {m.id === profile.id && <span className="ml-2 text-xs text-foreground/60">(나)</span>}
                     </p>
                     <p className="text-sm text-foreground/75">{m.email}</p>
-                    {detailsLabel(m.kind, m) && (
+                    {detailsLabel(m.kind, m, m.teacher_org) && (
                       <p className="text-sm">
-                        {m.kind === "teacher" ? "🏫 " : "🎓 "}{detailsLabel(m.kind, m)}
+                        {m.kind === "teacher" ? "🏫 " : "🎓 "}{detailsLabel(m.kind, m, m.teacher_org)}
                         <span className="ml-1 text-xs text-foreground/60">({m.info_public ? "공개" : "비공개"})</span>
                       </p>
                     )}

@@ -6,12 +6,12 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase, suspensionText } from "@/lib/supabase";
 import { useAuth } from "./AuthProvider";
 import DmRequestButton from "./DmRequestButton";
-import { detailsLabel, one, type Details } from "@/lib/member-info";
+import { detailsLabel, kindLabel, one, type Details } from "@/lib/member-info";
 
-type Author = { nickname: string; kind: string; teacher_verified: boolean; profile_details: Details | Details[] | null } | null;
-const AUTHOR = "profiles(nickname,kind,teacher_verified,profile_details(school,major,school_verified,region,center_type))";
+type Author = { nickname: string; kind: string; teacher_org: string | null; teacher_verified: boolean; profile_details: Details | Details[] | null } | null;
+const AUTHOR = "profiles(nickname,kind,teacher_org,teacher_verified,profile_details(school,major,school_verified,region,center_type))";
 type Post = {
-  id: number; category: string; title: string; body: string; author_id: string; created_at: string; pinned_at: string | null;
+  id: number; category: string; title: string; body: string; author_id: string; created_at: string; pinned_at: string | null; updated_at: string | null;
   profiles: Author; comments: { count: number }[];
 };
 type Comment = {
@@ -20,7 +20,6 @@ type Comment = {
 };
 
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
-const kindLabel = (k?: string) => (k === "teacher" ? "현장교사" : "재학생");
 const when = (s: string) => new Date(s).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
 
 export default function BoardView({
@@ -37,6 +36,8 @@ export default function BoardView({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState<{ category: string; title: string; body: string } | null>(null);
+  const [editMsg, setEditMsg] = useState("");
   const [reporting, setReporting] = useState<{ kind: "post_id" | "comment_id"; id: number; nickname: string } | null>(null);
   const suspended = suspensionText(profile?.suspended_until);
   const writable = canWrite && !!session;
@@ -44,7 +45,7 @@ export default function BoardView({
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("posts")
-      .select(`id,category,title,body,author_id,created_at,pinned_at,${AUTHOR},comments(count)`)
+      .select(`id,category,title,body,author_id,created_at,pinned_at,updated_at,${AUTHOR},comments(count)`)
       .eq("board", board)
       .order("pinned_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
@@ -67,10 +68,24 @@ export default function BoardView({
     load();
   }
 
+  async function saveEdit(e: React.FormEvent, id: number) {
+    e.preventDefault();
+    if (!editing) return;
+    const t = editing.title.trim(), b = editing.body.trim();
+    if (!t || !b) return setEditMsg("제목과 내용을 모두 적어 주세요.");
+    setEditMsg("");
+    const { data, error } = await supabase.from("posts").update({ category: editing.category, title: t, body: b }).eq("id", id).select("id");
+    if (error || !data?.length) return setEditMsg(suspended ? `${suspended} 중이라 글을 고칠 수 없어요.` : "수정하지 못했어요. 잠시 후 다시 시도해 주세요.");
+    setEditing(null);
+    load();
+  }
+
+  function closePost() { setOpen(null); setEditing(null); setEditMsg(""); }
+
   async function remove(id: number) {
     if (!confirm("이 글을 삭제할까요?")) return;
     await supabase.from("posts").delete().eq("id", id);
-    setOpen(null);
+    closePost();
     load();
   }
 
@@ -153,7 +168,7 @@ export default function BoardView({
         </ul>
       )}
       {openPost && (
-        <PostModal onClose={() => setOpen(null)}>
+        <PostModal onClose={closePost}>
           <span className="text-sm text-brand-dark">
             {openPost.pinned_at && <span className="mr-1.5 rounded-full border border-ink bg-white px-2 py-0.5 text-xs font-bold text-foreground">📌 고정</span>}
             [{openPost.category}]
@@ -162,12 +177,31 @@ export default function BoardView({
             {qna && <span className="mr-1.5">Q.</span>}{openPost.title}
           </h2>
           <div className="mt-2">
-            <AuthorLine author={openPost.profiles} userId={openPost.author_id} createdAt={openPost.created_at}
+            <AuthorLine author={openPost.profiles} userId={openPost.author_id} createdAt={openPost.created_at} updatedAt={openPost.updated_at}
               onReport={!session || openPost.author_id === session.user.id ? undefined : () => report("post_id", openPost.id, openPost.profiles?.nickname)} />
           </div>
-          <p className="mt-6 whitespace-pre-wrap text-base leading-relaxed">{openPost.body}</p>
-          {(openPost.author_id === session?.user.id || profile?.is_admin) && (
+          {editing ? (
+            <form onSubmit={(e) => saveEdit(e, openPost.id)} className="mt-6 space-y-3 card p-5">
+              <p className="font-bold">✏️ 글 수정</p>
+              <select className={input} value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })}>
+                {(categories.includes(editing.category) ? categories : [editing.category, ...categories]).map((c) => <option key={c}>{c}</option>)}
+              </select>
+              <input className={input} value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} maxLength={100} required aria-label="제목" />
+              <textarea className={`${input} min-h-60`} value={editing.body} onChange={(e) => setEditing({ ...editing, body: e.target.value })} maxLength={5000} required aria-label="내용" />
+              {editMsg && <p className="text-sm text-red-700">{editMsg}</p>}
+              <div className="flex gap-2">
+                <button className="rounded-full bg-brand px-5 py-2 font-medium text-white hover:bg-brand-dark">저장</button>
+                <button type="button" onClick={() => { setEditing(null); setEditMsg(""); }} className="rounded-full border border-line bg-white px-5 py-2">취소</button>
+              </div>
+            </form>
+          ) : (
+            <p className="mt-6 whitespace-pre-wrap text-base leading-relaxed">{openPost.body}</p>
+          )}
+          {!editing && (openPost.author_id === session?.user.id || profile?.is_admin) && (
             <div className="mt-6 flex gap-3 text-sm">
+              {openPost.author_id === session?.user.id && !suspended && (
+                <button onClick={() => setEditing({ category: openPost.category, title: openPost.title, body: openPost.body })} className="font-bold underline">✏️ 수정</button>
+              )}
               <button onClick={() => remove(openPost.id)} className="text-red-700 underline">삭제</button>
               {profile?.is_admin && (
                 <button onClick={() => togglePin(openPost)} className="font-bold underline">
@@ -343,21 +377,26 @@ function Comments({ postId, qna, onReport, onChange }: { postId: number; qna: bo
 
 // 작성자 줄: 닉네임 바로 옆에 신고 버튼 (내 글·댓글에는 신고 버튼을 숨김)
 function AuthorLine({
-  author, userId, createdAt, onReport,
-}: { author: Author; userId: string; createdAt: string; onReport?: () => void }) {
+  author, userId, createdAt, updatedAt, onReport,
+}: { author: Author; userId: string; createdAt: string; updatedAt?: string | null; onReport?: () => void }) {
   const nickname = author?.nickname;
   const kind = author?.kind;
-  const info = detailsLabel(kind, one(author?.profile_details));
+  const info = detailsLabel(kind, one(author?.profile_details), author?.teacher_org);
   return (
     <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-foreground/60">
       <span className="font-bold text-foreground/80">{nickname ?? "탈퇴한 회원"}</span>
+      {author && (
+        <span className={`rounded-full border px-1.5 leading-5 font-medium ${kind === "teacher" ? "border-ink bg-lime/60 text-foreground" : "border-line bg-white"}`}>
+          {kindLabel(kind, author.teacher_org)}{kind === "teacher" && author.teacher_verified ? " ✅" : ""}
+        </span>
+      )}
       {author && <DmRequestButton userId={userId} nickname={nickname ?? "회원"} />}
       {onReport && (
         <button onClick={onReport} className="rounded-full border border-line px-2 leading-5 hover:bg-red-50 hover:text-red-700" aria-label={`${nickname ?? "작성자"}의 게시물 신고`}>
           🚩 신고
         </button>
       )}
-      <span>· {kindLabel(kind)}{kind === "teacher" && author?.teacher_verified ? " ✅" : ""}{info ? ` · ${info}` : ""} · {when(createdAt)}</span>
+      <span>{info ? `${info} · ` : ""}{when(createdAt)}{updatedAt ? " (수정됨)" : ""}</span>
     </p>
   );
 }

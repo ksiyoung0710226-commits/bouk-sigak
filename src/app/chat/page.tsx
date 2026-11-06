@@ -7,8 +7,9 @@ import RequireAuth from "@/components/RequireAuth";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { ReportDialog, type ReportTarget } from "@/components/BoardView";
+import { kindLabel as kl } from "@/lib/member-info";
 
-type Person = { nickname: string; kind: string } | null;
+type Person = { nickname: string; kind: string; teacher_org?: string | null } | null;
 type Thread = {
   id: number; requester_id: string; recipient_id: string; intro: string;
   status: "pending" | "accepted" | "declined";
@@ -20,7 +21,7 @@ type Msg = { id: number; sender_id: string; body: string; created_at: string };
 
 const when = (s: string) =>
   new Date(s).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
-const kindLabel = (k?: string) => (k === "teacher" ? "현장교사" : "재학생");
+const kindLabel = (k?: string, org?: string | null) => kl(k, org);
 const notify = () => window.dispatchEvent(new Event("dm:changed"));
 
 export const isUnread = (t: Thread, me: string) => {
@@ -91,7 +92,7 @@ function Conversation({ t, me, onBack }: { t: Thread; me: string; onBack: () => 
           <button onClick={async () => { if (await blockThread(t, partnerName)) onBack(); }} className="rounded-full border border-line bg-white px-3 py-1 text-xs">🚫 차단</button>
         )}
       </div>
-      <p className="text-lg font-bold">💬 {partnerName} <span className="text-sm font-normal text-foreground/60">· {kindLabel(partner?.kind)}</span></p>
+      <p className="text-lg font-bold">💬 {partnerName} <span className="text-sm font-normal text-foreground/60">· {kindLabel(partner?.kind, partner?.teacher_org)}</span></p>
       <div className="note p-3 text-sm">
         <p className="text-xs text-foreground/60">
           처음 보낸 요청 멘트 · {when(t.created_at)}
@@ -151,7 +152,7 @@ function Inner() {
     let alive = true;
     supabase
       .from("dm_threads")
-      .select("id,requester_id,recipient_id,intro,status,requester_read_at,recipient_read_at,last_message_at,created_at,blocked_by,blocked_at,requester:profiles!dm_threads_requester_id_fkey(nickname,kind),recipient:profiles!dm_threads_recipient_id_fkey(nickname,kind)")
+      .select("id,requester_id,recipient_id,intro,status,requester_read_at,recipient_read_at,last_message_at,created_at,blocked_by,blocked_at,requester:profiles!dm_threads_requester_id_fkey(nickname,kind,teacher_org),recipient:profiles!dm_threads_recipient_id_fkey(nickname,kind,teacher_org)")
       .order("created_at", { ascending: false })
       .then(({ data }) => { if (alive) setThreads((data as unknown as Thread[]) ?? []); });
     return () => { alive = false; };
@@ -195,7 +196,7 @@ function Inner() {
           <ul className="space-y-3">
             {received.map((t) => (
               <li key={t.id} className="card space-y-2 p-4 text-sm">
-                <p><b>{t.requester?.nickname ?? "탈퇴한 회원"}</b> <span className="text-foreground/60">· {kindLabel(t.requester?.kind)} · {when(t.created_at)}</span></p>
+                <p><b>{t.requester?.nickname ?? "탈퇴한 회원"}</b> <span className="text-foreground/60">· {kindLabel(t.requester?.kind, t.requester?.teacher_org)} · {when(t.created_at)}</span></p>
                 <p className="note whitespace-pre-wrap p-3">{t.intro}</p>
                 <div className="flex gap-2">
                   <button onClick={() => respond(t.id, true)} className="rounded-full bg-brand px-4 py-1.5 font-medium text-white">수락하고 채팅하기</button>
@@ -224,7 +225,7 @@ function Inner() {
                   <button onClick={() => router.push(`/chat?t=${t.id}`)} className="flex w-full items-center justify-between gap-3 p-4 text-left hover:bg-soft">
                     <span>
                       {isUnread(t, me) && <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-red-600 align-middle" aria-label="새 메시지" />}
-                      <b>{partner?.nickname ?? "탈퇴한 회원"}</b> <span className="text-xs text-foreground/60">· {kindLabel(partner?.kind)}</span>
+                      <b>{partner?.nickname ?? "탈퇴한 회원"}</b> <span className="text-xs text-foreground/60">· {kindLabel(partner?.kind, partner?.teacher_org)}</span>
                     </span>
                     <span className="text-xs text-foreground/60">{t.last_message_at ? when(t.last_message_at) : "새 채팅"}</span>
                   </button>

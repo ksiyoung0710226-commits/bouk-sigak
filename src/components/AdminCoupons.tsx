@@ -3,19 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { supabase } from "@/lib/supabase";
-import { detailsLabel } from "@/lib/member-info";
+import { detailsLabel, kindLabel } from "@/lib/member-info";
 
 type Member = {
   id: string; nickname: string; kind: string; is_admin: boolean;
   school: string | null; major: string | null; school_verified: boolean;
-  region: string | null; center_type: string | null;
+  region: string | null; center_type: string | null; teacher_org: string | null;
 };
 type Event = { id: number; title: string; coupon: string; candidate_count: number; winner_count: number; created_at: string };
-type Winner = { id: number; event_id: number; user_id: string; code: string; messaged: boolean; profiles: { nickname: string; kind: string } | null };
+type Winner = { id: number; event_id: number; user_id: string; code: string; messaged: boolean; profiles: { nickname: string; kind: string; teacher_org: string | null } | null };
 
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
 const when = (s: string) => new Date(s).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
-const kindLabel = (k?: string) => (k === "teacher" ? "현장교사" : "재학생");
+
 const DEFAULT_MSG = "{닉네임} 님, 축하드려요! 🎉\neducare insight 회원 추첨에 당첨되셨어요.\n\n쿠폰 번호: {쿠폰번호}\n\n상품을 받으실 방법을 이 메시지에 답장으로 알려 주세요.";
 
 function WinnerList({ winners }: { winners: Winner[] }) {
@@ -23,7 +23,7 @@ function WinnerList({ winners }: { winners: Winner[] }) {
     <ul className="grid gap-2 sm:grid-cols-2">
       {winners.map((w, i) => (
         <li key={w.id} className="flex items-center justify-between gap-2 rounded-xl border-2 border-ink bg-lime/50 px-3 py-2 text-sm">
-          <span><b>{i + 1}. {w.profiles?.nickname ?? "탈퇴한 회원"}</b> <span className="text-xs text-foreground/60">{kindLabel(w.profiles?.kind)}</span></span>
+          <span><b>{i + 1}. {w.profiles?.nickname ?? "탈퇴한 회원"}</b> <span className="text-xs text-foreground/60">{kindLabel(w.profiles?.kind, w.profiles?.teacher_org)}</span></span>
           <span className="font-mono text-xs">{w.code}{w.messaged ? " · 📮보냄" : ""}</span>
         </li>
       ))}
@@ -84,7 +84,7 @@ export default function AdminCoupons() {
     supabase.rpc("admin_list_members").then(({ data }) => { if (alive) setMembers(((data as Member[]) ?? []).filter((m) => !m.is_admin)); });
     supabase.from("coupon_events").select("id,title,coupon,candidate_count,winner_count,created_at").order("created_at", { ascending: false }).limit(30)
       .then(({ data }) => { if (alive) setEvents((data as Event[]) ?? []); });
-    supabase.from("coupon_winners").select("id,event_id,user_id,code,messaged,profiles(nickname,kind)").order("id").limit(1000)
+    supabase.from("coupon_winners").select("id,event_id,user_id,code,messaged,profiles(nickname,kind,teacher_org)").order("id").limit(1000)
       .then(({ data }) => { if (alive) setWinners((data as unknown as Winner[]) ?? []); });
     return () => { alive = false; };
   }, [isAdmin, version]);
@@ -122,7 +122,7 @@ export default function AdminCoupons() {
   }
 
   const search = q.trim().toLowerCase();
-  const matches = (m: Member) => !search || m.nickname.toLowerCase().includes(search) || detailsLabel(m.kind, m).toLowerCase().includes(search);
+  const matches = (m: Member) => !search || m.nickname.toLowerCase().includes(search) || detailsLabel(m.kind, m, m.teacher_org).toLowerCase().includes(search);
 
   return (
     <section id="admin-coupons" className="scroll-mt-24 space-y-5 border-t-4 border-double border-ink pt-6">
@@ -138,7 +138,7 @@ export default function AdminCoupons() {
           <p className="font-bold">① 추첨 대상 고르기</p>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="font-medium">대상:</span>
-            {([["student", "🎓 재학생"], ["teacher", "🧸 현장교사"]] as const).map(([k, label]) => (
+            {([["student", "🎓 재학생·예비"], ["teacher", "🧸 교사"]] as const).map(([k, label]) => (
               <label key={k} className={`cursor-pointer rounded-full px-3 py-1 ${groups[k] ? "bg-brand text-white" : "border border-line bg-white"}`}>
                 <input type="checkbox" className="sr-only" checked={groups[k]} onChange={(e) => setGroups((g) => ({ ...g, [k]: e.target.checked }))} />
                 {label}
@@ -149,7 +149,7 @@ export default function AdminCoupons() {
 
           <input className={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="회원 찾기 (닉네임, 학교, 지역)" />
           <div className="grid gap-4 md:grid-cols-2">
-            {([["student", "🎓 재학생"], ["teacher", "🧸 현장교사"]] as const).map(([k, label]) => {
+            {([["student", "🎓 재학생·예비"], ["teacher", "🧸 교사"]] as const).map(([k, label]) => {
               const list = members.filter((m) => (m.kind === "teacher" ? "teacher" : "student") === k);
               const shown = list.filter(matches);
               return (
@@ -167,7 +167,7 @@ export default function AdminCoupons() {
                         <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 hover:bg-soft">
                           <input type="checkbox" checked={!excluded.has(m.id)} onChange={() => toggle(m.id)} disabled={!groups[k]} />
                           <span className="font-medium">{m.nickname}</span>
-                          <span className="truncate text-xs text-foreground/60">{detailsLabel(m.kind, m)}</span>
+                          <span className="truncate text-xs text-foreground/60">{detailsLabel(m.kind, m, m.teacher_org)}</span>
                         </label>
                       </li>
                     ))}

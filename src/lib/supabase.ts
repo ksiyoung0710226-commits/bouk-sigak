@@ -39,7 +39,8 @@ export const supabase = createClient(
 export type Profile = {
   id: string;
   nickname: string;
-  kind: "student" | "teacher";
+  kind: "student" | "prospective" | "teacher";
+  teacher_org: "어린이집" | "유치원" | null;
   teacher_verified: boolean;
   is_admin: boolean;
   suspended_until: string | null;

@@ -4,11 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { validateNickname } from "@/lib/nickname";
-import { STUDENT_NO_RE } from "@/lib/member-info";
+import { STUDENT_NO_RE, type Kind } from "@/lib/member-info";
 import SchoolPicker from "./SchoolPicker";
 import CenterPicker from "./CenterPicker";
 
-type Kind = "student" | "teacher";
 const input = "w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand";
 
 export default function SignupForm() {
@@ -19,6 +18,7 @@ export default function SignupForm() {
   const [school, setSchool] = useState("");
   const [major, setMajor] = useState("");
   const [studentNo, setStudentNo] = useState("");
+  const [org, setOrg] = useState("");
   const [region, setRegion] = useState("");
   const [centerType, setCenterType] = useState("");
   const [infoPublic, setInfoPublic] = useState(true);
@@ -36,7 +36,8 @@ export default function SignupForm() {
     if (password.length < 8) return setError("비밀번호는 8자 이상이어야 해요.");
     if (kind === "student" && (!school.trim() || !major.trim())) return setError("재학 중인 학교와 학과를 골라 주세요.");
     if (kind === "student" && studentNo.trim() && !STUDENT_NO_RE.test(studentNo.trim())) return setError("학번은 입학 연도 숫자 두 자리로 적어 주세요. (예: 24)");
-    if (kind === "teacher" && (!region || !centerType)) return setError("근무 지역과 어린이집 유형을 골라 주세요.");
+    if (kind === "teacher" && !org) return setError("어린이집 교사인지 유치원 교사인지 골라 주세요.");
+    if (kind === "teacher" && (!region || !centerType)) return setError(`근무 지역과 ${org} 종류를 골라 주세요.`);
     setBusy(true);
     const { data: free } = await supabase.rpc("nickname_available", { nick });
     if (free === false) {
@@ -49,7 +50,9 @@ export default function SignupForm() {
       options: {
         data: kind === "student"
           ? { nickname: nick, kind, school: school.trim(), major: major.trim(), student_no: studentNo.trim(), info_public: infoPublic }
-          : { nickname: nick, kind, region, center_type: centerType, info_public: infoPublic },
+          : kind === "teacher"
+            ? { nickname: nick, kind, teacher_org: org, region, center_type: centerType, info_public: infoPublic }
+            : { nickname: nick, kind },
         emailRedirectTo: `${window.location.origin}/login`,
       },
     });
@@ -83,8 +86,8 @@ export default function SignupForm() {
     <form onSubmit={submit} className="space-y-5">
       <div>
         <p className="mb-2 font-medium">가입 유형</p>
-        <div className="grid grid-cols-2 gap-3">
-          {([["student", "🎓 아동보육과 재학생"], ["teacher", "🧸 현장 보육교사"]] as const).map(([v, label]) => (
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          {([["student", "🎓 재학생"], ["prospective", "🌱 예비 재학생"], ["teacher", "🧸 교사"]] as const).map(([v, label]) => (
             <button type="button" key={v} onClick={() => setKind(v)}
               className={`rounded-xl border px-4 py-3 font-medium ${kind === v ? "border-brand bg-soft text-brand-dark" : "border-line bg-white"}`}>
               {label}
@@ -92,11 +95,15 @@ export default function SignupForm() {
           ))}
         </div>
         <p className="mt-2 text-xs text-foreground/60">
+          {kind === "student" && "유아교육과·아동보육과 등 관련 학과에 다니고 있어요. "}
+          {kind === "prospective" && "관련 학과 입학을 준비하거나 입학 예정이에요. "}
+          {kind === "teacher" && "어린이집이나 유치원에서 일하고 있어요. "}
           유형은 본인이 선택하는 표시이며, 별도의 서류 인증은 하지 않아요.
           {kind === "teacher" && " 가입 후 교사 인증 코드를 입력하면 Q&amp;A 답변에 ‘인증 교사’ 표시가 붙어요."}
         </p>
       </div>
 
+      {kind !== "prospective" && (
       <div className="space-y-3 rounded-xl border border-line bg-white/60 p-4">
         {kind === "student" ? (
           <div>
@@ -109,20 +116,22 @@ export default function SignupForm() {
             </label>
           </div>
         ) : (
-          <CenterPicker region={region} centerType={centerType}
-            onChange={(v) => { setRegion(v.region); setCenterType(v.centerType); }} />
+          <CenterPicker org={org} region={region} centerType={centerType}
+            onChange={(v) => { setOrg(v.org); setRegion(v.region); setCenterType(v.centerType); }} />
         )}
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" checked={infoPublic} onChange={(e) => setInfoPublic(e.target.checked)} className="mt-1" />
           <span>
-            {kind === "student" ? "학교와 학과를" : "근무 지역과 어린이집 유형을"} 다른 회원에게 공개할게요.
+            {kind === "student" ? "학교와 학과를" : `근무 지역과 ${org || "기관"} 종류를`} 다른 회원에게 공개할게요.
             <span className="mt-0.5 block text-xs text-foreground/60">
               공개하면 내 글과 댓글의 닉네임 옆에 표시돼요. <b>원치 않으면 체크를 풀어 숨길 수 있고, 가입 후에도 ‘내 정보’에서 언제든 바꿀 수 있어요.</b>
               숨겨도 이 정보는 운영(관리자 확인)을 위해 수집돼요.
+              {kind === "teacher" && " ‘어린이집 교사/유치원 교사’ 표시는 항상 보여요."}
             </span>
           </span>
         </label>
       </div>
+      )}
 
       <label className="block">
         <span className="mb-1 block text-sm font-medium">닉네임</span>
@@ -142,7 +151,7 @@ export default function SignupForm() {
         <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-1" required />
         <span>
           [필수] 만 14세 이상이며, <a href="/terms" target="_blank" className="font-bold underline">이용약관</a>과{" "}
-          <a href="/privacy" target="_blank" className="font-bold underline">개인정보 처리방침</a>(이메일, 닉네임, 가입 유형, {kind === "student" ? "재학 중인 학교·학과(학번은 입력한 경우)" : "근무 지역과 어린이집 분류"} 수집·국외 이전 포함)에 동의합니다. 게시글에
+          <a href="/privacy" target="_blank" className="font-bold underline">개인정보 처리방침</a>(이메일, 닉네임, 가입 유형, {kind === "student" ? "재학 중인 학교·학과(학번은 입력한 경우)" : kind === "teacher" ? "근무 기관(어린이집·유치원), 지역과 기관 종류" : "예비 재학생 여부"} 수집·국외 이전 포함)에 동의합니다. 게시글에
           <b> 아동·기관·학부모의 실명이나 개인정보를 쓰지 않겠습니다.</b>
         </span>
       </label>
